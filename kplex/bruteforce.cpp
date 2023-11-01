@@ -3,16 +3,15 @@
 #include "Utility.h"
 using namespace std;
 
-int k; //size constraint
-ui lb, newans;
-int Empty;
-ui nowu;
+vector<ui> P;
+vector<ui> newP;
+int lb, ub;
 
 struct Graph {
-	ui n; //number of vertices
-	ui m; //number of edges
-	ui pm; //number of positive edges
-	ui nm; //number of negative edges
+	int n; //number of vertices
+	int m; //number of edges
+	int pm; //number of positive edges
+	int nm; //number of negative edges
 
 	/*Store edges in linear arrays*/
 	ui * p_pstart; //start of positive edge number of a point
@@ -26,11 +25,15 @@ struct Graph {
 	ui * degree; //degree of a point
 	ui * p_degree; //positive degree of a point
 	ui * n_degree; //negative degree of a point
+
+	int ** Matrix;
+
+	//Suitable for situations with small data scales
+	int ** Tricnt; 
 }G, g;
 
 ui * bit_del; //mark whether the node is deleted
 ui * bit_sel; //mark whether the node is selected
-int ** Matrix;
 
 void load_graph(string input_graph)
 {
@@ -131,11 +134,11 @@ void load_graph(string input_graph)
 }
 
 //get G's k-core
-void get_Gcore(ui thr) {
-	if(thr < 2) return; //threshold should be at least 2
+void get_core(int k) {
+	if(k < 2) return; //threshold should be at least 2
 	Timer t;
 	t.restart();	
-	ui threshold = thr - 1;
+	ui threshold = k - 1;
 	ui del_count = 0;
 	bit_del = new ui[G.n];
 	memset(bit_del, 0, sizeof(ui)*G.n);
@@ -223,18 +226,32 @@ void get_Gcore(ui thr) {
         G.n_pend[i] = G.n_pstart[i+1];
     }
 
-	//rebuild degree
+	// //rebuild degree
+	// for (ui i = 0; i < G.n; i++) {
+    //     G.p_degree[i] = G.p_pstart[i+1] - G.p_pstart[i];
+    //     G.n_degree[i] = G.n_pstart[i+1] - G.n_pstart[i];
+    //     G.degree[i] = G.p_degree[i] + G.n_degree[i];
+	// }
+
+    // ui now_m = 0, now_pm = 0, now_nm = 0;
+    // for(ui i = 0; i < G.n; i++) {now_m += G.degree[i];now_pm += G.p_degree[i]; now_nm += G.n_degree[i];}
+    // assert(now_m%2 == 0); assert(now_pm%2 == 0); assert(now_nm%2 == 0);
+    // now_m /= 2; now_pm /= 2; now_nm /= 2;
+	// cout<<"\t vertex reduce, T : "<<integer_to_string(t.elapsed())<<",\t n="<<G.n<<", m="<<now_m<<endl;
+}
+
+//get degree for all nodes of G
+void get_deg() {
 	for (ui i = 0; i < G.n; i++) {
         G.p_degree[i] = G.p_pstart[i+1] - G.p_pstart[i];
         G.n_degree[i] = G.n_pstart[i+1] - G.n_pstart[i];
         G.degree[i] = G.p_degree[i] + G.n_degree[i];
 	}
+}
 
-    ui now_m = 0, now_pm = 0, now_nm = 0;
-    for(ui i = 0; i < G.n; i++) {now_m += G.degree[i];now_pm += G.p_degree[i]; now_nm += G.n_degree[i];}
-    assert(now_m%2 == 0); assert(now_pm%2 == 0); assert(now_nm%2 == 0);
-    now_m /= 2; now_pm /= 2; now_nm /= 2;
-	cout<<"\t vertex reduce, T : "<<integer_to_string(t.elapsed())<<",\t n="<<G.n<<", m="<<now_m<<endl;
+//get triangle count for all edges of G
+void get_tricnt() {
+
 }
 
 void get_g(ui u) {
@@ -272,9 +289,6 @@ void get_g(ui u) {
 	ui idx = 0;
 	for (ui i = 0; i < G.n; i++) {
 		if (bit_sel[i]) {
-            if(u == i) {
-                nowu = idx;
-            }
 			mapping[i] = idx++;
 		}
 	}
@@ -337,6 +351,10 @@ void get_g(ui u) {
 	}
 }
 
+//core-truss co-pruning
+void CTCP(int lb_changed, int tv, int te) {
+
+}
 
 bool dfs() {
     for(int i = 0; i < g.n; i++) {
@@ -403,42 +421,44 @@ int main(int argc, const char * argv[]) {
 
 	load_graph(argv[1]);
 
+	int k; //size constraint
     k = 2;
     if(argc > 2) k = atoi(argv[2]);	
 
 	cout<<"\t Graph: "<<argv[1]<<",\t k: "<<k<<endl;
 
-	// get_lb
-	lb = 0;
-	// get_Gcore
-	// get_Gcore(lb+1-k);
-	// getdegree
-	// gettriangle
-	// CTCP
+	//(P*, ub) <- kplex_degen(g, k)
+	//P*, ub
 
-	for(ui u = 0; u < G.n; u++) {
-	// while(G.n > 0) {
-		//getu
-		// ui u = 0;
-		// for(ui i = 0; i < G.n; i++) {
-		// 	if(G.degree[u] > G.degree[i]) {
-		// 		u = i;
-		// 	}
-		// }
-		//get u's neighbor
-		get_g(u);
-        //kplex
-        newans = 0;
-        vector<ui> s;
-        nowu = u;
-		kplex(0, 0, s);
-		// bool lb_changed = false;
-		if(newans > lb) {
-			// lb_changed = true;
-			lb = newans;
-		}
-		//ctcp
+	if((int)P.size() < ub) {
+		lb = max((int)P.size(), 2*k-2);
+		get_core(lb+1-k);
+		get_deg();
+		get_tricnt();
+		CTCP(1, lb+1-k, lb+1-2*k);
 
+		while(G.n > 0) {
+			//get u
+			ui u = 0;
+			for(int i = 0; i < G.n; i++) {
+				if(G.degree[u] > G.degree[i]) {
+					u = i;
+				}
+			}
+			//kplex
+			newP.clear();
+
+			vector<ui> s;
+			kplex(0, 0, s);
+			int lb_changed = 0;
+			if(newP.size() > lb) {
+				P = newP;
+				lb = newP.size();
+				lb_changed = 1;
+			}
+			//CTCP
+			CTCP(lb_changed, lb+1-k, lb+1-2*k);
+			}
 	}
 
 	printf("lb = %d\n", lb);
