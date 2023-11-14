@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include "Timer.h"
 #include "Utility.h"
+#include "LinearHeap.h"
 using namespace std;
 
 vector<int> P;
@@ -39,13 +40,14 @@ struct Graph {
 
 	Edge * edges_pair;
 
-	//Suitable for situations with small data scales
+	//Sinttable for situations with small data scales
 	int * tri_cnt; 
 }G, g;
 
 int * bit_del; //mark whether the node is deleted
 int * bit_sel; //mark whether the node is selected
 int * edge_del;
+int * deleted;
 
 void load_graph(string input_graph)
 {
@@ -186,6 +188,56 @@ void load_graph(string input_graph)
 	cout<<"\t G : n = "<<G.n<<", m = "<<G.m<<", pm = "<<G.pm<<", nm = "<<G.nm<<endl;
 }
 
+// degeneracy-based k-plex
+// return an upper bound of the maximum k-plex size
+// return dOrder
+void kplex_degen(ListLinearHeap *heap, int k, int *dOrder) {
+	Timer t;
+	int *peel_sequence = new int[G.n];
+	int *vis = new int[G.n];
+	
+	for(int i = 0; i < G.n; i++) peel_sequence[i] = i;
+	for(int i = 0; i < G.n; i++) vis[i] = 0;
+
+	heap->init(G.n, G.n-1, peel_sequence, G.degree);
+	for(int i = 0; i < G.n; i++) {
+		int u, deg;
+		heap->pop_min(u, deg);
+		dOrder[i] = u;
+
+		// if(deg+k >= G.n-i+1 && G.n-i+1 > lb) lb = G.n-i+1;
+		ub = max(ub, min(deg+k, G.n-i+1));
+
+		for(int j = G.pstart[u]; j < G.pend[u]; j++) {
+			int v = G.edges[j];
+			if(vis[v] == 0) heap->decrement(v, 1);
+		}
+		vis[u] = 1;
+	}
+
+	// for(int i = 0; i < G.n; i++) {
+	// 	printf("%d ", dOrder[i]);
+	// }
+	// printf("\n");
+
+	delete [] peel_sequence;
+	delete [] vis;
+
+}
+
+void kplex_hec(int k, int *dOrder) {
+	// P.clear();
+	// for(int i = G.n - 1; i >= 0; i--) {
+	// 	int u = dOrder[i];
+	// 	int nowsize = P.size();
+	// 	for(int j = 0; j < nowsize; j++) {
+	// 		for(int k = j + 1; k < nowsize; k++) {
+
+	// 		}
+	// 	}
+	// }
+}
+
 //get G's k-core
 void get_G_core(int k)
 {
@@ -200,7 +252,6 @@ void get_G_core(int k)
 	int del_count = 0;
 	bit_del = new int[G.n];
 	memset(bit_del, 0, sizeof(int)*G.n);
-
 	queue<int> q;
 
 	for (int i = 0; i < G.n; i++) if(G.degree[i] < threshold) q.push(i);
@@ -224,6 +275,7 @@ void get_G_core(int k)
 			}
         }
 	}
+
 
 	//rebuild
 	int * mapping = new int[G.n];
@@ -279,6 +331,11 @@ void get_G_core(int k)
     G.n_pstart = t_n_pstart;
     G.n_edges = t_n_edges;
 
+    for (int i = 0; i < G.n; i++){
+        G.p_pend[i] = G.p_pstart[i+1];
+        G.n_pend[i] = G.n_pstart[i+1];
+    }
+
 	//construct edges
 	G.pstart[0] = 0;
 	for (int u = 0; u < G.n; u++) {
@@ -297,11 +354,6 @@ void get_G_core(int k)
 		G.pstart[u + 1] = start_idx;
 	}
 	assert(G.pstart[G.n] == 2*G.m);
-
-    for (int i = 0; i < G.n; i++){
-        G.p_pend[i] = G.p_pstart[i+1];
-        G.n_pend[i] = G.n_pstart[i+1];
-    }
 
 	//rebuild degree
 	for (int i = 0; i < G.n; i++) {
@@ -375,25 +427,31 @@ void get_g(int u)
 
 	for(int i = G.p_pstart[u]; i < G.p_pend[u]; i++) {
 		int v1 = G.p_edges[i];
+		if(deleted[v1]) continue;
 		bit_sel[v1] = 1;
 		for(int j = G.p_pstart[v1]; j < G.p_pend[v1]; j++) {
 			int v2 = G.p_edges[j];
+			if(deleted[v2]) continue;
 			bit_sel[v2] = 1;
 		}
 		for(int j = G.n_pstart[v1]; j < G.n_pend[v1]; j++) {
 			int v2 = G.n_edges[j];
+			if(deleted[v2]) continue;
 			bit_sel[v2] = 1;
 		}
 	}
 	for(int i = G.n_pstart[u]; i < G.n_pend[u]; i++) {
 		int v1 = G.n_edges[i];
+		if(deleted[v1]) continue;
 		bit_sel[v1] = 1;
 		for(int j = G.p_pstart[v1]; j < G.p_pend[v1]; j++) {
 			int v2 = G.p_edges[j];
+			if(deleted[v2]) continue;
 			bit_sel[v2] = 1;
 		}
 		for(int j = G.n_pstart[v1]; j < G.n_pend[v1]; j++) {
 			int v2 = G.n_edges[j];
+			if(deleted[v2]) continue;
 			bit_sel[v2] = 1;
 		}
 	}
@@ -402,6 +460,7 @@ void get_g(int u)
 	int * mapping = new int[G.n];
 	int idx = 0;
 	for (int i = 0; i < G.n; i++) {
+		if(deleted[i]) continue;
 		if (bit_sel[i]) {
 			mapping[i] = idx++;
 		}
@@ -486,45 +545,59 @@ void get_g(int u)
 			g.Matrix[u][v] = -1;
 		}
 	}
-	for(int i = 0; i < g.n; i++) {
-		for(int j = 0; j < g.n; j++) {
-			printf("%d ", g.Matrix[i][j]);
-		}
-		printf("\n");
-	}
+	// for(int i = 0; i < g.n; i++) {
+	// 	for(int j = 0; j < g.n; j++) {
+	// 		printf("%d ", g.Matrix[i][j]);
+	// 	}
+	// 	printf("\n");
+	// }
 
 	cout<<"\t get_g, T : "<<integer_to_string(t.elapsed())<<",\t n="<<g.n<<", m="<<g.m<<endl;
 }
 
-void truss_peeling(int qv, queue<Edge> qe, int te) {
+void truss_peeling(queue<int> *qv, queue<Edge> *qe, int tv, int te) {
+	while(!qv->empty()) {
+		int u = qv->front(); qv->pop();
+		for(int i = G.pstart[u]; i < G.pend[u]; i++) {
+			int v = G.edges[i];
+			if(deleted[v]) continue;
+			G.degree[v]--;
+			if(G.degree[v] == tv - 1) qv->push(v);
+		}
+		for(int i = G.p_pstart[u]; i < G.p_pend[u]; i++) {
+			int v = G.p_edges[i];
+			if(deleted[v]) continue;
+			G.p_degree[v]--;
+		}
+		for(int i = G.n_pstart[u]; i < G.n_pend[u]; i++) {
+			int v = G.n_edges[i];
+			if(deleted[v]) continue;
+			G.n_degree[v]--;
+		}
+		deleted[u] = 1;
+	}
 	// while(!qv.empty() && !qe.empty()) {
-	// 	while(!qe.empty()) {
+		// 	while(!qe.empty()) {
 
-	// 	}
+		// 	}
 	// }
 }
 
 //core-truss co-pruning
 void CTCP(int del, int lb_changed, int tv, int te) {
-	bit_del = new int[g.n];
-	memset(bit_del, 0, sizeof(int)*g.n);
+	queue<int> qv;
 	queue<Edge> qe;
-	if(lb_changed) {
-		for(int i = 0; i < G.m; i++) {
-			if(G.tri_cnt[i] < te) {
-				qe.push(G.edges_pair[i]);
-			}
-		}
-	}
-	truss_peeling(del, qe, te);
-	bool flag = 1;
-	while(flag) {
-		flag = 0;
-		for(int i = 0; i < G.n; i++) {
-			if(G.degree[i] < tv) {
-				truss_peeling(i, qe, te);
-			}
-		}
+	if(del != -1) qv.push(del);
+	// if(lb_changed) {
+	// 	for(int i = 0; i < G.m; i++) {
+	// 		if(G.tri_cnt[i] < te && !del[i]) {
+	// 			qe.push(G.edges_pair[i]);
+	// 		}
+	// 	}
+	// }
+	truss_peeling(&qv, &qe, tv, te);
+	while(!qv.empty()) {
+		truss_peeling(&qv, &qe, tv, te);
 	}
 }
 
@@ -605,49 +678,50 @@ int main(int argc, const char * argv[])
 
 	cout<<"\t Graph: "<<argv[1]<<",\t k: "<<k<<endl;
 
-	//(P*, ub) <- kplex_degen(g, k)
-	//P*, ub
-	ub = 10000;
-// 	queue<int> qv;
+	//(lb, ub) <- kplex_degen(g, k)
+	ListLinearHeap *heap = new ListLinearHeap(G.n, G.n-1);
+	int *dOrder = new int[G.n];
+	kplex_degen(heap, k, dOrder);
+	delete heap;
+	printf("\t degen: lb = %d, ub = %d\n", lb, ub);
+	kplex_hec(k, dOrder);
+
+	deleted = new int[G.n];
+	memset(deleted, 0, sizeof(int)*G.n);
+
 	if((int)P.size() < ub) {
 		lb = max((int)P.size(), 2*k-2);
 		get_G_core(lb+1-k);
 		get_G_deg();
 		get_G_tricnt();
-// 		// while(!qv.empty()) qv.pop();
-		// CTCP(-1, 1, lb+1-k, lb+1-2*k);
+		CTCP(-1, 1, lb+1-k, lb+1-2*k);
 
-		// while(G.n > 0) {
-		for(int i = 0; i < G.n; i++) {
+		while(G.n > 0) {
+		// for(int i = 0; i < G.n; i++) {
 			//get u
-			int u = i;
-			// int u = 0;
-			// for(int i = 0; i < G.n; i++) {
-			// 	if(G.degree[u] > G.degree[i]) {
-			// 		u = i;
-			// 	}
-			// }
+			// int u = i;
+			int u = -1;
+			for(int i = 0; i < G.n; i++) {
+				if(deleted[i]) continue;
+				if(u == -1 || G.degree[u] > G.degree[i]) {
+					u = i;
+				}
+			}
 			printf("u = %d\n", u);
+			if(u == -1) break;
 			//get g
 			get_g(u);
 			//kplex
-			// newP.clear();
 			vector<int> s; s.clear();
 			kplex_search(0, 0, k, s);
 			int lb_changed = 0;
-			// if(newP.size() > lb) {
 			if(newans >= lb) {
 				ans = newans;
 				lb = newans;
-				// P = newP;
-				// lb = newP.size();
 				if(newans > lb) lb_changed = 1;
 			}
-		// 	while(!qv.empty()) qv.pop();
-		// 	qv.push(u);
 			// CTCP
-			// CTCP(u, lb_changed, lb+1-k, lb+1-2*k);
-			// break;
+			CTCP(u, lb_changed, lb+1-k, lb+1-2*k);
 		}
 	}
 
