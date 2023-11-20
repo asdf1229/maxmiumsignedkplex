@@ -191,7 +191,8 @@ void load_graph(string input_graph)
 // degeneracy-based k-plex
 // return an upper bound of the maximum k-plex size
 // return dOrder
-void kplex_degen(ListLinearHeap *heap, int k, int *dOrder) {
+void kplex_degen(ListLinearHeap *heap, int k, int *dOrder)
+{
 	Timer t;
 	int *peel_sequence = new int[G.n];
 	int *vis = new int[G.n];
@@ -225,7 +226,8 @@ void kplex_degen(ListLinearHeap *heap, int k, int *dOrder) {
 
 }
 
-void kplex_hec(int k, int *dOrder) {
+void kplex_hec(int k, int *dOrder)
+{
 	// P.clear();
 	// for(int i = G.n - 1; i >= 0; i--) {
 	// 	int u = dOrder[i];
@@ -418,7 +420,7 @@ void get_G_tricnt()
 	delete [] adj;
 }
 
-void get_g(int u)
+int get_g(int u)
 {
 	Timer t;
 	bit_sel = new int[G.n];
@@ -457,11 +459,13 @@ void get_g(int u)
 	}
 
 	//build g
+	int nowu = -1;
 	int * mapping = new int[G.n];
 	int idx = 0;
 	for (int i = 0; i < G.n; i++) {
 		if(deleted[i]) continue;
 		if (bit_sel[i]) {
+			if(u == i) nowu = i;
 			mapping[i] = idx++;
 		}
 	}
@@ -553,9 +557,11 @@ void get_g(int u)
 	// }
 
 	cout<<"\t get_g, T : "<<integer_to_string(t.elapsed())<<",\t n="<<g.n<<", m="<<g.m<<endl;
+	return nowu;
 }
 
-void truss_peeling(queue<int> *qv, queue<Edge> *qe, int tv, int te) {
+void truss_peeling(queue<int> *qv, queue<Edge> *qe, int tv, int te)
+{
 	while(!qv->empty()) {
 		int u = qv->front(); qv->pop();
 		for(int i = G.pstart[u]; i < G.pend[u]; i++) {
@@ -584,7 +590,8 @@ void truss_peeling(queue<int> *qv, queue<Edge> *qe, int tv, int te) {
 }
 
 //core-truss co-pruning
-void CTCP(int del, int lb_changed, int tv, int te) {
+void CTCP(int del, int lb_changed, int tv, int te)
+{
 	queue<int> qv;
 	queue<Edge> qe;
 	if(del != -1) qv.push(del);
@@ -601,7 +608,8 @@ void CTCP(int del, int lb_changed, int tv, int te) {
 	}
 }
 
-int cal(int k, int siz, vector<int> s) {
+int cal(int k, int siz, vector<int> s)
+{
 	int * deg = new int[siz];
 	memset(deg, 0, sizeof(int)*siz);
 
@@ -664,30 +672,246 @@ void kplex_search(int dep, int siz, int k, vector<int> s)
 
 }
 
+void heu_signed_kplex(int rounds, int k)
+{
+	if(rounds < 1) return;
+	priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> kset;
+	for(int i = 0; i < rounds; i++) kset.push(make_pair(G.degree[i], i));
+
+    for(int i = rounds; i < G.n; i++){
+        if(G.degree[i] > kset.top().first){
+            kset.pop();
+            kset.push(make_pair(G.degree[i], i));
+        }
+    }
+    vector<pair<int, int>> ordV(rounds);
+    for(int i = 0; i < rounds; i++){
+        ordV[i] = kset.top();
+        kset.pop();
+    }
+    assert(kset.empty());
+	sort(ordV.begin(), ordV.end(), greater<pair<int, int>>()); //decreasing order
+
+    int * label = new int[G.n];
+    int * vs_deg = new int[G.n];
+	int * inR = new int[G.n];
+	
+	for(int round = 0; round < rounds && round < G.n; round++) {
+        int u = ordV[round].second;
+		printf("u = %d\n", u);
+
+		u = get_g(u);
+		
+        memset(label, 0, sizeof(int)*g.n);
+		memset(inR, 0, sizeof(int)*g.n);
+        vector<int> res;
+        res.push_back(u);
+		inR[u] = 1;
+        vector<int> vsP, vsN;
+        for(int i = g.p_pstart[u]; i < g.p_pend[u]; i++){
+            int v = g.p_edges[i];
+            vsP.push_back(v);
+            label[v] = 1;
+        }
+        for(int i = g.n_pstart[u]; i < g.n_pend[u]; i++){
+            int v = g.n_edges[i];
+            vsN.push_back(v);
+            label[v] = 2;
+        }
+        for(auto e : vsP) vs_deg[e] = 0;
+        for(auto e : vsN) vs_deg[e] = 0;
+        for(auto e : vsP){
+            for(int i = g.p_pstart[e]; i < g.p_pend[e]; i++){
+                int v = g.p_edges[i];
+                if(label[v] == 1) ++ vs_deg[e];
+            }
+            for(int i = g.n_pstart[e]; i < g.n_pend[e]; i++){
+                int v = g.n_edges[i];
+                if(label[v] == 2) ++ vs_deg[e];
+            }
+        }
+        for(auto e : vsN){
+            for(int i = g.p_pstart[e]; i < g.p_pend[e]; i++){
+                int v = g.p_edges[i];
+                if(label[v] == 2) ++ vs_deg[e];
+            }
+            for(int i = g.n_pstart[e]; i < g.n_pend[e]; i++){
+                int v = g.n_edges[i];
+                if(label[v] == 1) ++ vs_deg[e];
+            }
+        }
+
+		while (!vsP.empty() || !vsN.empty()) {
+			if(!vsP.empty()) {
+                int tmp_deg = 0;
+                int next_v;
+                for(int i = 0; i < vsP.size(); i++){
+                    if(vs_deg[vsP[i]] >= tmp_deg){
+                        tmp_deg = vs_deg[vsP[i]];
+                        next_v = vsP[i];
+                    }
+                }
+                res.push_back(next_v);
+				inR[next_v] = 1;
+                vector<int> new_vsP, new_vsN;
+                assert(label[next_v] == 1);
+                for(int i = g.p_pstart[next_v]; i < g.p_pend[next_v]; i++){
+                    int v = g.p_edges[i];
+                    if(label[v] == 1) new_vsP.push_back(v);
+                }
+                for(int i = g.n_pstart[next_v]; i < g.n_pend[next_v]; i++){
+                    int v = g.n_edges[i];
+                    if(label[v] == 2) new_vsN.push_back(v);
+                }
+                for(auto e : vsP) label[e] = 0;
+                for(auto e : vsN) label[e] = 0;
+                vsP = new_vsP;
+                vsN = new_vsN;
+                for(auto e : vsP) label[e] = 1;
+                for(auto e : vsN) label[e] = 2;
+                for(auto e : vsP) vs_deg[e] = 0;
+                for(auto e : vsN) vs_deg[e] = 0;
+                for(auto e : vsP){
+                    for(int i = g.p_pstart[e]; i < g.p_pend[e]; i++){
+                        int v = g.p_edges[i];
+                        if(label[v] == 1) ++ vs_deg[e];
+                    }
+                    for(int i = g.n_pstart[e]; i < g.n_pend[e]; i++){
+                        int v = g.n_edges[i];
+                        if(label[v] == 2) ++ vs_deg[e];
+                    }
+                }
+                for(auto e : vsN){
+                    for(int i = g.p_pstart[e]; i < g.p_pend[e]; i++){
+                        int v = g.p_edges[i];
+                        if(label[v] == 2) ++ vs_deg[e];
+                    }
+                    for(int i = g.n_pstart[e]; i < g.n_pend[e]; i++){
+                        int v = g.n_edges[i];
+                        if(label[v] == 1) ++ vs_deg[e];
+                    }
+                }
+			}
+			else if(!vsN.empty()) {
+                int tmp_deg = 0;
+                int next_v;
+                for(int i = 0; i < vsN.size(); i++){
+                    if(vs_deg[vsN[i]] >= tmp_deg){
+                        tmp_deg = vs_deg[vsN[i]];
+                        next_v = vsN[i];
+                    }
+                }
+                res.push_back(next_v);
+				inR[next_v] = 1;
+                vector<int> new_vsP, new_vsN;
+                assert(label[next_v] == 2);
+                for(int i = g.p_pstart[next_v]; i < g.p_pend[next_v]; i++){
+                    int v = g.p_edges[i];
+                    if(label[v] == 2) new_vsN.push_back(v);
+                }
+                for(int i = g.n_pstart[next_v]; i < g.n_pend[next_v]; i++){
+                    int v = g.n_edges[i];
+                    if(label[v] == 1) new_vsP.push_back(v);
+                }
+                for(auto e : vsP) label[e] = 0;
+                for(auto e : vsN) label[e] = 0;
+                vsP = new_vsP;
+                vsN = new_vsN;
+                for(auto e : vsP) label[e] = 1;
+                for(auto e : vsN) label[e] = 2;
+                for(auto e : vsP) vs_deg[e] = 0;
+                for(auto e : vsN) vs_deg[e] = 0;
+                for(auto e : vsP){
+                    for(int i = g.p_pstart[e]; i < g.p_pend[e]; i++){
+                        int v = g.p_edges[i];
+                        if(label[v] == 1) ++ vs_deg[e];
+                    }
+                    for(int i = g.n_pstart[e]; i < g.n_pend[e]; i++){
+                        int v = g.n_edges[i];
+                        if(label[v] == 2) ++ vs_deg[e];
+                    }
+                }
+                for(auto e : vsN){
+                    for(int i = g.p_pstart[e]; i < g.p_pend[e]; i++){
+                        int v = g.p_edges[i];
+                        if(label[v] == 2) ++ vs_deg[e];
+                    }
+                    for(int i = g.n_pstart[e]; i < g.n_pend[e]; i++){
+                        int v = g.n_edges[i];
+                        if(label[v] == 1) ++ vs_deg[e];
+                    }
+                }
+			}
+		}
+
+		cout << "clique_size = " << res.size() << endl;
+		if(res.size() > P.size()) {
+			P = res;
+		}
+
+		ordV.clear();
+		for(int i = 0; i < g.n; i++) {
+			if(inR[i]) continue;
+			ordV.push_back(make_pair(g.degree[i], i));
+			sort(ordV.begin(), ordV.end(), greater<pair<int, int>>()); //decreasing order
+		}
+		for(auto pa : ordV) {
+			int v = pa.second;
+			// printf("%d ", v);
+			res.push_back(v);
+			if(!cal(k, res.size(), res)) res.pop_back();
+		}
+
+		cout << "kplex_size = " << res.size() << endl;
+		if(res.size() > P.size()) {
+			P = res;
+		}
+	}
+	cout << "hec_kplex_size = " << P.size() << endl;
+	for(auto u : P) {
+		printf("%d ", u);
+	}
+	printf("\n");
+}
+
 int main(int argc, const char * argv[])
 {
     if(argc < 2) {
         cout<<"\t Usage: [0]exe [1]input_graph [2]k (optional)\t"<<endl; exit(1);
     }
 
+	// load graph
 	load_graph(argv[1]);
-
-	int k; //size constraint
-    k = 3;
+	int k = 3; //size constraint
     if(argc > 2) k = atoi(argv[2]);	
-
 	cout<<"\t Graph: "<<argv[1]<<",\t k: "<<k<<endl;
-
-	//(lb, ub) <- kplex_degen(g, k)
-	ListLinearHeap *heap = new ListLinearHeap(G.n, G.n-1);
-	int *dOrder = new int[G.n];
-	kplex_degen(heap, k, dOrder);
-	delete heap;
-	printf("\t degen: lb = %d, ub = %d\n", lb, ub);
-	kplex_hec(k, dOrder);
 
 	deleted = new int[G.n];
 	memset(deleted, 0, sizeof(int)*G.n);
+
+	// find heuristic signed k-plex
+	heu_signed_kplex(1, k);
+
+	// //(lb, ub) <- kplex_degen(g, k)
+	// ListLinearHeap *heap = new ListLinearHeap(G.n, G.n-1);
+	// int *dOrder = new int[G.n];
+	// kplex_degen(heap, k, dOrder);
+	// delete heap;
+	// printf("\t degen: lb = %d, ub = %d\n", lb, ub);
+	// kplex_hec(k, dOrder);
+
+	return 0;
+
+
+
+
+
+
+
+
+
+
+
 
 	if((int)P.size() < ub) {
 		lb = max((int)P.size(), 2*k-2);

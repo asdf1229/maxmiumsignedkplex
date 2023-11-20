@@ -147,7 +147,7 @@ string integer_to_string(long long number) {
     return res;
 }
 
-inline int psz(pair<vector<ui>, vector<ui>> & p)
+inline int psz(pair<vector<int>, vector<int>> & p)
 {
     return p.first.size()+p.second.size();
 }
