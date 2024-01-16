@@ -1,0 +1,7 @@
+	 load_graph: time cost = 46
+	 G : n = 9, m = 24, pm = 16, nm = 8
+	 Graph: data_in/in.txt,	 k: 2
+	 heu_find_kplex, T : 25,	 heu_kplex_size = 4
+	 get_k_core, time cost = 1,	 k = 3, n = 9, m = 24
+---------------------------
+	 find_signed_kplex, T : 360,	 kplex_size=5

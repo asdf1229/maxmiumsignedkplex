@@ -1,5 +1,5 @@
-#ifndef TIMER_H_
-#define TIMER_H_
+#ifndef _TIMER_H_
+#define _TIMER_H_
 
 #include <cstdlib>
 #include <sys/time.h>
@@ -21,5 +21,5 @@ private:
     }
 };
 
-#endif /* TIMER_H_ */
+#endif /* _TIMER_H_ */
 
