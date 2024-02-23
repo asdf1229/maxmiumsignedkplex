@@ -195,7 +195,6 @@ void Graph::load_graph(string input_graph)
 	cout<<"\t G : n = "<<n<<", m = "<<m<<", pm = "<<pm<<", nm = "<<nm<<endl;
 }
 
-//get G's k-core
 void Graph::get_k_core(int k)
 {
 	Timer t;
@@ -375,7 +374,7 @@ void Graph::rebuild_graph(bool *v_del)
 
 void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
 {
-    // printf("\t CTCP: tv = %d, te = %d\n", tv, te);
+    printf("\t CTCP: tv = %d, te = %d\n", tv, te);
 	tv = max(0, tv); te = max(0, te);
     Timer t;
 	t.restart();
@@ -535,7 +534,7 @@ void Graph::heu_signed_kplex(int rounds, int k)
 		get_degree();
 		ui u = 0;
 		for(ui i = 1; i < n; i++) if(degree[u] > degree[i]) u = i;
-		// printf("%d %d\n", u, degree[u]);
+		printf("%d %d\n", u, degree[u]);
 
 		vp.clear();
 		sgn.clear();

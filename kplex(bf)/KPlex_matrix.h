@@ -141,7 +141,7 @@ public:
         best_solution_size = kplex.size();
         ui R_end = 0;
         initialization(R_end, must_include_0);
-        if(R_end) kplex_search(0, R_end, 1, must_include_0, n);
+        if(R_end) _kplex_search(0, R_end, 1);
         if(best_solution_size > kplex.size()) {
             kplex.clear();
             for(ui i = 0; i < best_solution_size; i++) kplex.push_back(best_solution[i]);
@@ -336,6 +336,7 @@ public:
 
 private:
     // initialize degree_in_S, R_end, level_id
+
     void initialization(ui &R_end, bool must_include_0) {
         memset(degree_in_S, 0, sizeof(ui)*n);
         R_end = 0;
@@ -350,14 +351,47 @@ private:
         assert(Qv.empty());
     }
 
-    void kplex_search(ui S_end, ui R_end, ui level, bool choose_zero, ui last_choice) {
+    void _kplex_search(ui S_end, ui R_end, ui level) {
+        //check
+        
+
         if(S_end > best_solution_size) { // find a larger solution
             best_solution_size = S_end;
             for(ui i = 0; i < best_solution_size; i++) best_solution[i] = SR[i];
         }
-        if(R_end <= best_solution_size) return ;
+        if(R_end <= best_solution_size) return;
 
         // choose branching vertex
+        ui u = SR[S_end];
+
+        // the first branch includes u into S
+        bool pruned = true;
+        ui pre_best_solution_size = best_solution_size, old_R_end = R_end;
+
+        assert(SR[SR_rid[u]] == u);
+        assert(SR[SR_rid[u]] == u&&SR_rid[u] >= S_end&&SR_rid[u] < R_end);
+        
+        swap_pos(S_end, SR_rid[u]); S_end++;
+        move_u_to_S(S_end, R_end, level);
+        if(check_balance(S_end-1, u) && check_kplex(S_end)) {
+            _kplex_search(S_end, R_end, level+1);
+        }
+        restore_SR(S_end, R_end, old_R_end, level);
+
+        // the second branch exclude u from S
+        remove_u_from_SR(S_end, R_end, level);
+        _kplex_search(S_end, R_end, level+1);
+        restore_SR(S_end, R_end, old_R_end, level);
+    }
+
+    void kplex_search(ui S_end, ui R_end, ui level, bool choose_zero) {
+        if(S_end > best_solution_size) { // find a larger solution
+            best_solution_size = S_end;
+            for(ui i = 0; i < best_solution_size; i++) best_solution[i] = SR[i];
+        }
+        if(R_end <= best_solution_size) return;
+
+        //choose branching vertex
         bool must_include = false;
         ui u = n; // u is the branching vertex
         if(choose_zero) {
@@ -382,7 +416,7 @@ private:
         swap_pos(S_end, SR_rid[u]);
         S_end++;
         pruned = move_u_to_S(S_end, R_end, level);
-        if(!pruned) kplex_search(S_end, R_end, level+1, false, u);
+        if(!pruned) kplex_search(S_end, R_end, level+1, false);
         restore_SR(S_end, R_end, old_R_end, level);
 
         if(must_include) {
@@ -396,7 +430,7 @@ private:
         if(!pruned && best_solution_size > pre_best_solution_size) pruned = collect_removable_vertices(S_end, R_end, level);
         if(!pruned) {
             if(!remove_vertices_from_R(S_end, R_end, level)) {
-            	kplex_search(S_end, R_end, level+1, false, last_choice);
+            	kplex_search(S_end, R_end, level+1, false);
             }
         }
         restore_SR(S_end, R_end, old_R_end, level);
@@ -416,45 +450,7 @@ private:
 
         for(ui i = 0; i < neighbors_n; i++) degree_in_S[neighbors[i]]++;
 
-        // after adding u, it's necessary to check the non neighbors of u and u
-        assert(Qv.empty());
-        // check if the nonneighbors of u in R can be candidates
-        if(degree_in_S[u] + K == S_end) {
-        	ui i = 0;
-        	while(i < nonneighbors_n && SR_rid[nonneighbors[i]] < S_end) i++;
-            for(; i < nonneighbors_n; i++) {
-            	assert(level_id[nonneighbors[i]] > level);
-            	level_id[nonneighbors[i]] = level;
-                Qv.push(nonneighbors[i]);
-            }
-        }
-        else {
-        	ui i = 0;
-        	while(i < nonneighbors_n && SR_rid[nonneighbors[i]] < S_end) i++;
-            for(; i < nonneighbors_n; i++) if(degree_in_S[nonneighbors[i]] + K <= S_end) {
-            	assert(level_id[nonneighbors[i]] > level);
-            	level_id[nonneighbors[i]] = level;
-                Qv.push(nonneighbors[i]);
-            }
-        }
-
-        // check the neighbors of nodes in S
-        for(ui i = 0; i < nonneighbors_n && SR_rid[nonneighbors[i]] < S_end; i++) if(degree_in_S[nonneighbors[i]] + K == S_end) {
-            int *tt_matrix = matrix + nonneighbors[i]*n;
-            for(ui j = S_end; j < R_end; j++) if(level_id[SR[j]] > level && !tt_matrix[SR[j]]) {
-            	level_id[SR[j]] = level;
-                Qv.push(SR[j]);
-            }
-        }
-
-        // check balance
-        for(ui i = S_end; i < R_end; i++) {
-            if(level_id[SR[i]] > level && !check_balance(S_end, SR[i])) {
-            	level_id[SR[i]] = level;
-                Qv.push(SR[i]);
-            }
-        }
-        return remove_vertices_from_R(S_end, R_end, level);
+        return true;
     }
 
     bool remove_vertices_from_R(ui S_end, ui &R_end, ui level)
@@ -494,21 +490,10 @@ private:
 
     void restore_SR(ui S_end, ui &R_end, ui old_R_end, ui level)
     {
-        while(!Qv.empty()) {
-            ui u = Qv.front(); Qv.pop();
-            assert(level_id[u] == level&&SR_rid[u] < R_end);
-            level_id[u] = n;
-        }
         while(R_end < old_R_end) { // insert u back into R
             ui u = SR[R_end];
             assert(level_id[u] == level&&SR_rid[u] == R_end);
             level_id[u] = n;
-
-            int *t_matrix = matrix + u*n;
-            for(ui i = 0; i < R_end; i++) if(t_matrix[SR[i]]) {
-                degree[SR[i]]++;
-            }
-
             R_end++;
         }
     }
@@ -531,23 +516,11 @@ private:
 		swap_pos(S_end, R_end);
 		level_id[u] = level;
 
-		bool terminate = false;
-        ui neighbors_n = 0;
         int *t_matrix = matrix + u*n;
         for(ui i = 0; i < R_end; i++) if(t_matrix[SR[i]]) {
             ui v = SR[i];
         	degree_in_S[v]--;
-        	degree[v]--;
-        	if(degree[v] + K <= best_solution_size) {
-        		if(i < S_end) terminate = true;
-        		else {
-        			assert(level_id[v] > level);
-        			level_id[v] = level;
-        			Qv.push(v);
-        		}
-        	}
         }
-        if(terminate) return true;
 		return false;
 	}
 
@@ -613,38 +586,15 @@ private:
         return true;
     }
 
-    // degeneracy-based k-plex
-    // return an upper bound of the maximum k-plex size
-    // return dOrder
-    // void degen(ListLinearHeap *heap, ui *dOrder)
-    // {
-    // 	int *peel_sequence = new ui[n];
-    // 	int *vis = new ui[n];
-        
-    // 	for(ui i = 0; i < n; i++) peel_sequence[i] = i;
-    // 	for(ui i = 0; i < n; i++) vis[i] = 0;
-
-    // 	heap->init(n, n-1, peel_sequence, degree);
-    // 	for(ui i = 0; i < n; i++) {
-    // 		int u, deg;
-    // 		heap->pop_min(u, deg);
-    // 		dOrder[n - i] = u;
-
-    //         int *t_matrix = matrix + u*n;
-    //         for(ui j = 0; j < n; j++) if(j != u && t_matrix[j]) {
-    // 			if(vis[j] == 0) heap->decrement(j, 1);
-    // 		}
-    // 		vis[u] = 1;
-    // 	}
-
-    // 	// for(ui i = 0; i < n; i++) {
-    // 	// 	printf("%d ", dOrder[i]);
-    // 	// }
-    // 	// printf("\n");
-
-    // 	delete [] peel_sequence;
-    // 	delete [] vis;
-    // }
+    bool check_kplex(ui S_end)
+    {
+        for(ui i = 0; i < S_end; i++) {
+            if(degree_in_S[SR[i]] + K < S_end) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 #endif
