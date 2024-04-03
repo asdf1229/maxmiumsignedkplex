@@ -52,6 +52,7 @@ private:
     void get_tricnt();
     void get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn);
     void rebuild_graph(bool *v_del);
+    void rebuild_graph(bool *v_del, bool *e_del);
     void CTCP(int del_v, bool lb_changed, int tv, int te);
     void heu_signed_kplex(int rounds, int k);
 };

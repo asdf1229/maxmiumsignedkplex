@@ -373,6 +373,62 @@ void Graph::rebuild_graph(bool *v_del)
     delete[] rid;
 }
 
+void Graph::rebuild_graph(bool *v_del, bool *e_del)
+{
+	ui *rid = new ui[n];
+	ui cnt = 0;
+	for(ui i = 0; i < n; i++) if(!v_del[i]) {
+		rid[i] = cnt++;
+	}
+
+    if(cnt != n) {
+        cnt = 0;
+		ept pos = 0, p_pos = 0, n_pos = 0;
+        pstart[0] = p_pstart[0] = n_pstart[0] = 0;
+		for(ui u = 0; u < n; u++) if(!v_del[u]) {
+			ept p_pointer = p_pstart[u], n_pointer = n_pstart[u];
+			for(ept i = pstart[u]; i < pend[u]; i++) if(!e_del[i]) {
+				ui v = edges[i];
+				if(!v_del[v]) {
+					edges[pos++] = rid[v];
+
+					while(p_pointer < p_pend[u] && p_edges[p_pointer] < v) p_pointer++;
+					while(n_pointer < n_pend[u] && n_edges[n_pointer] < v) n_pointer++;
+
+					if(p_edges[p_pointer] == v) {
+						p_edges[p_pos++] = rid[v];
+						p_pointer++;
+					}
+					else if(n_edges[n_pointer] == v) {
+						n_edges[n_pos++] = rid[v];
+						n_pointer++;
+					}
+					else {
+						throw std::runtime_error("rebuild_graph error");
+					}
+				}
+			}
+			pend[cnt] = pos;
+			p_pend[cnt] = p_pos;
+			n_pend[cnt] = n_pos;
+			cnt++;
+		}
+
+		n = cnt;
+		m = pos / 2;
+		pm = p_pos / 2;
+		nm = n_pos / 2;
+
+		for(ui u = 1; u <= n; u++) {
+			pstart[u] = pend[u-1];
+			p_pstart[u] = p_pend[u-1];
+			n_pstart[u] = n_pend[u-1];
+		}
+    }
+
+    delete[] rid;
+}
+
 void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
 {
     // printf("\t CTCP: tv = %d, te = %d\n", tv, te);
@@ -472,7 +528,8 @@ void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
         }
     }
 
-    rebuild_graph(v_del);
+	// rebuild_graph(v_del);
+    rebuild_graph(v_del, e_del);
 
     delete[] v_del;
     delete[] e_del;
@@ -570,8 +627,8 @@ void Graph::find_signed_kplex()
     lb = 0, ub = n;
 
 	// find heuristic signed k-plex
-	CTCP(-1, 1, lb+1-K, lb+1-2*K);
-	heu_signed_kplex(10, K);
+	// CTCP(-1, 1, lb+1-K, lb+1-2*K);
+	// heu_signed_kplex(10, K);
 	// return;
 
     if((int)kplex.size() < ub) {
