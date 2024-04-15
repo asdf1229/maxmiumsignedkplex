@@ -1,0 +1,7 @@
+	 load_graph: time cost = 12,331
+	 G : n = 7605, m = 14124, pm = 12937, nm = 1187
+	 Graph: data_in/1.edges,	 k: 2
+	 heu_find_kplex, T : 46,024,	 heu_kplex_size = 10
+	 get_k_core, time cost = 1,	 k = 9, n = 224, m = 3314
+---------------------------
+	 find_signed_kplex, T : 618,479,	 kplex_size=10

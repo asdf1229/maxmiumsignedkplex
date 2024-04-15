@@ -528,8 +528,8 @@ void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
         }
     }
 
-	// rebuild_graph(v_del);
-    rebuild_graph(v_del, e_del);
+	rebuild_graph(v_del);
+    // rebuild_graph(v_del, e_del);
 
     delete[] v_del;
     delete[] e_del;

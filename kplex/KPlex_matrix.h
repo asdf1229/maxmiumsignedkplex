@@ -398,7 +398,9 @@ private:
             best_solution_size = S_end;
             for(ui i = 0; i < best_solution_size; i++) best_solution[i] = SR[i];
         }
-        if(R_end <= best_solution_size) return ;
+        if(R_end <= best_solution_size) return;
+
+        if(!calc_upper_bound_partition(S_end, R_end)) return;
 
         // choose branching vertex
         bool must_include = false;
@@ -998,6 +1000,40 @@ private:
     // 	delete [] peel_sequence;
     // 	delete [] vis;
     // }
+
+    bool calc_upper_bound_partition(ui S_end, ui R_end) {
+        ui ub = 0, pi0 = R_end - S_end;
+        ui *label = neighbors;
+        ui *missing_edges = nonneighbors;
+        memset(label, 0, sizeof(ui)*n);
+
+        //calculate missing_edges
+        for(ui i = 0; i < S_end; i++) {
+            missing_edges[i] = S_end - degree_in_S[SR[i]] - 1;
+        }
+
+        for(ui i = 0; i < S_end; i++) {
+            ui u = SR[i];
+            ui cn = 0;
+            int *t_matrix = matrix + u*n;
+            for(ui j = S_end; j < R_end; j++) if(!label[SR[j]] && !t_matrix[SR[j]]) {
+                label[SR[j]] = 1;
+                cn++;
+                pi0--;
+            }
+            ub = ub + min(K - 1 - missing_edges[i], cn);
+        }
+
+        ub = S_end + pi0 + ub;
+
+        // printf("%d %d\n", ub, best_solution_size);
+
+        if(ub <= best_solution_size) {
+            printf("!\n");
+            return false;
+        }
+        return true;
+    }
 };
 
 #endif
