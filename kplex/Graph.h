@@ -8,7 +8,6 @@
 class Graph {
 private:
     vector<ui> kplex;
-
     int K;
 
     ui n; //number of vertices
@@ -33,8 +32,8 @@ private:
 	ui *p_degree; //positive degree of a point
 	ui *n_degree; //negative degree of a point
     ept *tri_cnt;
-    int lb, ub;
 
+    int lb, ub;
     int s_n;
 
 public:
@@ -47,13 +46,12 @@ public:
     void find_signed_kplex();
 
 private:
-    void get_k_core(int k);
     void get_degree();
     void get_tricnt();
     void get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn);
     void rebuild_graph(bool *v_del);
     void rebuild_graph(bool *v_del, bool *e_del);
-    void CTCP(int del_v, bool lb_changed, int tv, int te);
+    void CTCP(int del_v, int tv, int te);
     void heu_signed_kplex(int rounds, int k);
 };
 

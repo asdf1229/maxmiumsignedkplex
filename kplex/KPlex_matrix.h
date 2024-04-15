@@ -10,12 +10,15 @@ The original code and license can be found at: https://github.com/LijunChang/Max
 #include "Timer.h"
 #include "LinearHeap.h"
 
-#define _SECOND_ORDER_PRUNING_
+// #define _SECOND_ORDER_PRUNING_
 
 class KPLEX_MATRIX {
 private:
-    long long n;
+    ui *best_solution;
+    ui best_solution_size;
+    ui K;
 
+    long long n;
     int *matrix;
     long long matrix_size;
 
@@ -29,38 +32,42 @@ private:
     ui *degree;
     ui *degree_in_S;
 
-    ui K;
-    ui *best_solution;
-    ui best_solution_size;
-
     ui *neighbors;
     ui *nonneighbors;
 
-    ui *SR; // union of S and R, where S is at the front
-    ui *SR_rid; // reverse ID for SR
+    ui *SR; // union of selected set and candidate set
+    ui *SR_rid; // mapping of indices of SR
     std::queue<ui> Qv;
     ui *level_id;
 
 public:
     KPLEX_MATRIX()
     {
+        best_solution = NULL;
+        best_solution_size = 0;
+        K = 0;
+
     	n = 0;
         matrix = NULL;
         matrix_size = 0;
 
-        degree = degree_in_S = NULL;
-        
-        best_solution = NULL;
-        K = best_solution_size = 0;
+        degree = NULL;
+        degree_in_S = NULL;
 
-        neighbors = nonneighbors = NULL;
+        neighbors = NULL;
+        nonneighbors = NULL;
 
-        SR = SR_rid = NULL;
+        SR = NULL;
+        SR_rid = NULL;
         level_id = NULL;
     }
 
     ~KPLEX_MATRIX()
     {
+        if(best_solution != NULL){
+            delete[] best_solution;
+            best_solution = NULL;
+        }
         if(matrix != NULL){
             delete[] matrix;
             matrix = NULL;
@@ -79,9 +86,13 @@ public:
             delete[] degree_in_S;
             degree_in_S = NULL;
         }
-        if(best_solution != NULL){
-            delete[] best_solution;
-            best_solution = NULL;
+        if(neighbors != NULL){
+            delete[] neighbors;
+            neighbors = NULL;
+        }
+        if(nonneighbors != NULL){
+            delete[] nonneighbors;
+            nonneighbors = NULL;
         }
         if(SR != NULL){
             delete[] SR;
@@ -91,14 +102,6 @@ public:
             delete[] SR_rid;
             SR_rid = NULL;
         }
-        if(neighbors != NULL){
-            delete[] neighbors;
-            neighbors = NULL;
-        }
-        if(nonneighbors != NULL){
-            delete[] nonneighbors;
-            nonneighbors = NULL;
-        }
         if(level_id != NULL){
         	delete[] level_id;
         	level_id = NULL;
@@ -107,6 +110,8 @@ public:
 
     void allocateMemory(ui n, ui m)
     {
+        best_solution = new ui[n];
+
         matrix = new int[m*2];
         matrix_size = m*2;
 #ifdef _SECOND_ORDER_PRUNING_
@@ -114,7 +119,6 @@ public:
 #endif
         degree = new ui[n];
         degree_in_S = new ui[n];
-        best_solution = new ui[n];
 
         neighbors = new ui[n];
         nonneighbors = new ui[n];
@@ -124,7 +128,7 @@ public:
         level_id = new ui[n];
     }
 
-    // initialize matrix, degree
+    //Initialize matrix, degree
     void load_graph(ui _n, const std::vector<std::pair<int,int> > &vp, const std::vector<int> sgn) 
     {
         n = _n;
@@ -147,7 +151,8 @@ public:
         assert(vp.size() == sgn.size());
         for(ui i = 0; i < vp.size(); i++) {
             assert(vp[i].first >= 0&&vp[i].first < n&&vp[i].second >= 0&&vp[i].second < n);
-        	ui a = vp[i].first, b = vp[i].second;
+        	assert(sgn[i] == 1 || sgn[i] == -1);
+            ui a = vp[i].first, b = vp[i].second;
             degree[a]++; degree[b]++;
             matrix[a*n + b] = matrix[b*n + a] = sgn[i];
         }
@@ -158,13 +163,13 @@ public:
 #endif
     }
 
-    void kPlex(ui K_, std::vector<ui> &kplex, bool must_include_0)
+    void kPlex(ui K_, std::vector<ui> &kplex)
     {
         K = K_;
         best_solution_size = kplex.size();
         ui R_end = 0;
-        initialization(R_end, must_include_0);
-        if(R_end) kplex_search(0, R_end, 1, must_include_0, n);
+        initialization(R_end);
+        if(R_end) kplex_search(0, R_end, 1, true, n);
         if(best_solution_size > kplex.size()) {
             kplex.clear();
             for(ui i = 0; i < best_solution_size; i++) kplex.push_back(best_solution[i]);
@@ -173,193 +178,193 @@ public:
 
     void heu_kPlex(ui K_, std::vector<ui> &kplex)
     {
-        K = K_;
-        best_solution_size = 0;
-        ui *label = level_id;
-        // ui *dOrder = SR;
-        memset(label, 0, sizeof(ui)*n);
-        memset(degree_in_S, 0, sizeof(ui)*n);
+        // K = K_;
+        // best_solution_size = 0;
+        // ui *label = level_id;
+        // // ui *dOrder = SR;
+        // memset(label, 0, sizeof(ui)*n);
+        // memset(degree_in_S, 0, sizeof(ui)*n);
 
-        // ListLinearHeap *heap = new ListLinearHeap(n, n-1);
-        // degen(heap, dOrder);
+        // // ListLinearHeap *heap = new ListLinearHeap(n, n-1);
+        // // degen(heap, dOrder);
 
-        {
-            ui u = n, max_degree = 0;
-            for(int i = 0; i < n; i++) {
-                assert(label[i] == 0);
-                if(degree[i] > max_degree) {
-                    max_degree = degree[i];
-                    u = i;
-                }
-            }
-            printf("u = %d, maxdegree = %d\n", u, max_degree);
-            assert(u != n);
-            label[u] = 3;
-            best_solution[best_solution_size++] = u;
-            int *t_matrix = matrix + u*n;
+        // {
+        //     ui u = n, max_degree = 0;
+        //     for(int i = 0; i < n; i++) {
+        //         assert(label[i] == 0);
+        //         if(degree[i] > max_degree) {
+        //             max_degree = degree[i];
+        //             u = i;
+        //         }
+        //     }
+        //     printf("u = %d, maxdegree = %d\n", u, max_degree);
+        //     assert(u != n);
+        //     label[u] = 3;
+        //     best_solution[best_solution_size++] = u;
+        //     int *t_matrix = matrix + u*n;
 
-            ui neighbors_n = 0, nonneighbors_n = 0;
-            for(ui i = 0; i < n; i++) if(i != u) {
-                if(t_matrix[i]) neighbors[neighbors_n++] = i;
-                else nonneighbors[nonneighbors_n++] = i;
-            }
+        //     ui neighbors_n = 0, nonneighbors_n = 0;
+        //     for(ui i = 0; i < n; i++) if(i != u) {
+        //         if(t_matrix[i]) neighbors[neighbors_n++] = i;
+        //         else nonneighbors[nonneighbors_n++] = i;
+        //     }
 
-            for(ui i = 0; i < neighbors_n; i++) degree_in_S[neighbors[i]]++;
+        //     for(ui i = 0; i < neighbors_n; i++) degree_in_S[neighbors[i]]++;
 
-            for(ui i = 0; i < neighbors_n; i++) {
-                ui v = neighbors[i];
-                if(t_matrix[v] == 1) {
-                    label[v] = 1;
-                }
-                else if(t_matrix[v] == -1) {
-                    label[v] = 2;
-                }
-            }
-            int c[10];
-            for(int i = 0; i < 6; i++) c[i] = 0;
-            for(ui i = 0; i < n; i++) {
-                assert(label[i] >= 0 && label[i] < 6);
-                c[label[i]]++;
-            }
-            for(int i = 0; i < 6; i++) {
-                printf("%d ", c[i]);
-            }
-            printf("\n");
-        }
+        //     for(ui i = 0; i < neighbors_n; i++) {
+        //         ui v = neighbors[i];
+        //         if(t_matrix[v] == 1) {
+        //             label[v] = 1;
+        //         }
+        //         else if(t_matrix[v] == -1) {
+        //             label[v] = 2;
+        //         }
+        //     }
+        //     int c[10];
+        //     for(int i = 0; i < 6; i++) c[i] = 0;
+        //     for(ui i = 0; i < n; i++) {
+        //         assert(label[i] >= 0 && label[i] < 6);
+        //         c[label[i]]++;
+        //     }
+        //     for(int i = 0; i < 6; i++) {
+        //         printf("%d ", c[i]);
+        //     }
+        //     printf("\n");
+        // }
 
-        while(1) {
-            // u is the next vertex
-            ui u = n, max_degree = 0, inP = 0;
+        // while(1) {
+        //     // u is the next vertex
+        //     ui u = n, max_degree = 0, inP = 0;
             
-            for(ui i = 0; i < n; i++) {
-                assert(label[i] >= 0 && label[i] < 6);
-                // if(label[i] > 3) {
-                //     u = i;
-                //     inP = label[i];
-                //     break;
-                // }
+        //     for(ui i = 0; i < n; i++) {
+        //         assert(label[i] >= 0 && label[i] < 6);
+        //         // if(label[i] > 3) {
+        //         //     u = i;
+        //         //     inP = label[i];
+        //         //     break;
+        //         // }
 
 
 
-                if(label[i] == 1 && degree[i] > max_degree) {
-                    max_degree = degree[i];
-                    inP = 1;
-                    u = i;
-                }
-                else if(label[i] == 2 && degree[i] > max_degree) {
-                    max_degree = degree[i];
-                    inP = 2;
-                    u = i;
-                }
-            }
-            printf("u = %d, maxdegree = %d\n", u, max_degree);
-            if(u == n) break;
-            best_solution[best_solution_size++] = u;
-            int *t_matrix = matrix + u*n;
-            assert(label[u] == 1 || label[u] == 2);
-            assert((inP == 1 || inP == 2));
+        //         if(label[i] == 1 && degree[i] > max_degree) {
+        //             max_degree = degree[i];
+        //             inP = 1;
+        //             u = i;
+        //         }
+        //         else if(label[i] == 2 && degree[i] > max_degree) {
+        //             max_degree = degree[i];
+        //             inP = 2;
+        //             u = i;
+        //         }
+        //     }
+        //     printf("u = %d, maxdegree = %d\n", u, max_degree);
+        //     if(u == n) break;
+        //     best_solution[best_solution_size++] = u;
+        //     int *t_matrix = matrix + u*n;
+        //     assert(label[u] == 1 || label[u] == 2);
+        //     assert((inP == 1 || inP == 2));
 
-            ui neighbors_n = 0, nonneighbors_n = 0;
-            for(ui i = 0; i < n; i++) if(i != u) {
-                if(t_matrix[i]) neighbors[neighbors_n++] = i;
-                else nonneighbors[nonneighbors_n++] = i;
-            }
+        //     ui neighbors_n = 0, nonneighbors_n = 0;
+        //     for(ui i = 0; i < n; i++) if(i != u) {
+        //         if(t_matrix[i]) neighbors[neighbors_n++] = i;
+        //         else nonneighbors[nonneighbors_n++] = i;
+        //     }
 
-            for(ui i = 0; i < neighbors_n; i++) degree_in_S[neighbors[i]]++;
+        //     for(ui i = 0; i < neighbors_n; i++) degree_in_S[neighbors[i]]++;
 
-            // after adding u, it's necessary to check the non neighbors of u and u
+        //     // after adding u, it's necessary to check the non neighbors of u and u
 
-            // check if the nonneighbors of u in R can be candidates
-            if(degree_in_S[u] + K == best_solution_size) {
-                for(ui i = 0; i < nonneighbors_n; i++) {
-                    int v = nonneighbors[i];
-                    if(label[v] < 3) label[v] = 5;
-                }
-            }
-            else {
-                for(ui i = 0; i < nonneighbors_n; i++) {
-                    int v = nonneighbors[i];
-                    if(label[v] < 3 && degree_in_S[v] + K <= best_solution_size) label[v] = 5;
-                }
-            }
+        //     // check if the nonneighbors of u in R can be candidates
+        //     if(degree_in_S[u] + K == best_solution_size) {
+        //         for(ui i = 0; i < nonneighbors_n; i++) {
+        //             int v = nonneighbors[i];
+        //             if(label[v] < 3) label[v] = 5;
+        //         }
+        //     }
+        //     else {
+        //         for(ui i = 0; i < nonneighbors_n; i++) {
+        //             int v = nonneighbors[i];
+        //             if(label[v] < 3 && degree_in_S[v] + K <= best_solution_size) label[v] = 5;
+        //         }
+        //     }
 
-            // check the neighbors of nodes in S
-            for(ui i = 0; i < nonneighbors_n; i++) {
-                ui v = nonneighbors[i];
-                if(!(label[v] == 3 || label[v] == 4)) continue;
-                if(degree_in_S[v] + K == best_solution_size) {
-                    int *tt_matrix = matrix + v*n;
-                    for(ui j = 0; j < n; j++) if(v != j) {
-                        if(label[j] < 3 && !tt_matrix[j]) label[j] = 5;
-                    }
-                }
-            }
+        //     // check the neighbors of nodes in S
+        //     for(ui i = 0; i < nonneighbors_n; i++) {
+        //         ui v = nonneighbors[i];
+        //         if(!(label[v] == 3 || label[v] == 4)) continue;
+        //         if(degree_in_S[v] + K == best_solution_size) {
+        //             int *tt_matrix = matrix + v*n;
+        //             for(ui j = 0; j < n; j++) if(v != j) {
+        //                 if(label[j] < 3 && !tt_matrix[j]) label[j] = 5;
+        //             }
+        //         }
+        //     }
 
-            {
-                int c[10];
-                for(int i = 0; i < 6; i++) c[i] = 0;
-                for(ui i = 0; i < n; i++) {
-                    assert(label[i] >= 0 && label[i] < 6);
-                    c[label[i]]++;
-                }
-                for(int i = 0; i < 6; i++) {
-                    printf("%d ", c[i]);
-                }
-                printf("#\n");
-            }
+        //     {
+        //         int c[10];
+        //         for(int i = 0; i < 6; i++) c[i] = 0;
+        //         for(ui i = 0; i < n; i++) {
+        //             assert(label[i] >= 0 && label[i] < 6);
+        //             c[label[i]]++;
+        //         }
+        //         for(int i = 0; i < 6; i++) {
+        //             printf("%d ", c[i]);
+        //         }
+        //         printf("#\n");
+        //     }
 
 
-            if(inP == 1) {
-                label[u] = 3;
-                for(ui i = 0; i < n; i++) if(u != i) {
-                    assert(label[i] >= 0 && label[i] < 6);
-                    if(t_matrix[i] == 1) {
-                        if(label[i] == 0) label[i] = 1;
-                        if(label[i] == 2) label[i] = 5;
-                    }
-                    else if(t_matrix[i] == -1) {
-                        if(label[i] == 0) label[i] = 2;
-                        if(label[i] == 1) label[i] = 5;
-                    }
-                }
-            }
-            else if(inP == 2) {
-                label[u] = 4;
-                for(ui i = 0; i < n; i++) if(u != i) {
-                    assert(label[i] >= 0 && label[i] < 6);
-                    if(t_matrix[i] == 1) {
-                        if(label[i] == 0) label[i] = 2;
-                        if(label[i] == 1) label[i] = 5;
-                    }
-                    else if(t_matrix[i] == -1) {
-                        if(label[i] == 0) label[i] = 1;
-                        if(label[i] == 2) label[i] = 5;
-                    }
-                }
-            }
+        //     if(inP == 1) {
+        //         label[u] = 3;
+        //         for(ui i = 0; i < n; i++) if(u != i) {
+        //             assert(label[i] >= 0 && label[i] < 6);
+        //             if(t_matrix[i] == 1) {
+        //                 if(label[i] == 0) label[i] = 1;
+        //                 if(label[i] == 2) label[i] = 5;
+        //             }
+        //             else if(t_matrix[i] == -1) {
+        //                 if(label[i] == 0) label[i] = 2;
+        //                 if(label[i] == 1) label[i] = 5;
+        //             }
+        //         }
+        //     }
+        //     else if(inP == 2) {
+        //         label[u] = 4;
+        //         for(ui i = 0; i < n; i++) if(u != i) {
+        //             assert(label[i] >= 0 && label[i] < 6);
+        //             if(t_matrix[i] == 1) {
+        //                 if(label[i] == 0) label[i] = 2;
+        //                 if(label[i] == 1) label[i] = 5;
+        //             }
+        //             else if(t_matrix[i] == -1) {
+        //                 if(label[i] == 0) label[i] = 1;
+        //                 if(label[i] == 2) label[i] = 5;
+        //             }
+        //         }
+        //     }
 
-            // {
-            //     int c[10];
-            //     for(int i = 0; i < 6; i++) c[i] = 0;
-            //     for(ui i = 0; i < n; i++) {
-            //         assert(label[i] >= 0 && label[i] < 6);
-            //         c[label[i]]++;
-            //     }
-            //     for(int i = 0; i < 6; i++) {
-            //         printf("%d ", c[i]);
-            //     }
-            //     printf("\n");
-            // }
-        }
-        if(best_solution_size > kplex.size()) {
-            kplex.clear();
-            for(ui i = 0; i < best_solution_size; i++) kplex.push_back(best_solution[i]);
-        }
+        //     // {
+        //     //     int c[10];
+        //     //     for(int i = 0; i < 6; i++) c[i] = 0;
+        //     //     for(ui i = 0; i < n; i++) {
+        //     //         assert(label[i] >= 0 && label[i] < 6);
+        //     //         c[label[i]]++;
+        //     //     }
+        //     //     for(int i = 0; i < 6; i++) {
+        //     //         printf("%d ", c[i]);
+        //     //     }
+        //     //     printf("\n");
+        //     // }
+        // }
+        // if(best_solution_size > kplex.size()) {
+        //     kplex.clear();
+        //     for(ui i = 0; i < best_solution_size; i++) kplex.push_back(best_solution[i]);
+        // }
     }
 
 private:
-    // initialize degree_in_S, R_end, level_id
-    void initialization(ui &R_end, bool must_include_0) {
+    // Initialize degree_in_S, SR, SR_rid, R_end, level_id
+    void initialization(ui &R_end) {
         memset(degree_in_S, 0, sizeof(ui)*n);
         R_end = 0;
         for(ui i = 0; i < n; i++) SR_rid[i] = n;
@@ -400,7 +405,7 @@ private:
         }
         if(R_end <= best_solution_size) return;
 
-        if(!calc_upper_bound_partition(S_end, R_end)) return;
+        if(!upper_bound_based_partition(S_end, R_end)) return;
 
         // choose branching vertex
         bool must_include = false;
@@ -968,40 +973,7 @@ private:
         return true;
     }
 
-    // degeneracy-based k-plex
-    // return an upper bound of the maximum k-plex size
-    // return dOrder
-    // void degen(ListLinearHeap *heap, ui *dOrder)
-    // {
-    // 	int *peel_sequence = new ui[n];
-    // 	int *vis = new ui[n];
-        // 
-    // 	for(ui i = 0; i < n; i++) peel_sequence[i] = i;
-    // 	for(ui i = 0; i < n; i++) vis[i] = 0;
-// 
-    // 	heap->init(n, n-1, peel_sequence, degree);
-    // 	for(ui i = 0; i < n; i++) {
-    // 		int u, deg;
-    // 		heap->pop_min(u, deg);
-    // 		dOrder[n - i] = u;
-// 
-    //         int *t_matrix = matrix + u*n;
-    //         for(ui j = 0; j < n; j++) if(j != u && t_matrix[j]) {
-    // 			if(vis[j] == 0) heap->decrement(j, 1);
-    // 		}
-    // 		vis[u] = 1;
-    // 	}
-// 
-    // 	// for(ui i = 0; i < n; i++) {
-    // 	// 	printf("%d ", dOrder[i]);
-    // 	// }
-    // 	// printf("\n");
-// 
-    // 	delete [] peel_sequence;
-    // 	delete [] vis;
-    // }
-
-    bool calc_upper_bound_partition(ui S_end, ui R_end) {
+    bool upper_bound_based_partition(ui S_end, ui R_end) {
         ui ub = 0, pi0 = R_end - S_end;
         ui *label = neighbors;
         ui *missing_edges = nonneighbors;
@@ -1029,7 +1001,7 @@ private:
         // printf("%d %d\n", ub, best_solution_size);
 
         if(ub <= best_solution_size) {
-            printf("!\n");
+            // printf("!\n");
             return false;
         }
         return true;

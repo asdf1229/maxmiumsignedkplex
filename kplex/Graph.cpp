@@ -7,89 +7,88 @@ using namespace std;
 Graph::Graph(const int _K)
 {
     kplex.clear();
-
     K = _K;
 
     n = m = pm = nm = 0;
 
-    pstart = nullptr;
-    pend = nullptr;
-    edges = nullptr;
+    pstart = NULL;
+    pend = NULL;
+    edges = NULL;
 
-    p_pstart = nullptr;
-    p_pend = nullptr;
-    p_edges = nullptr;
+    p_pstart = NULL;
+    p_pend = NULL;
+    p_edges = NULL;
 
-    n_pstart = nullptr;
-    n_pend = nullptr;
-    n_edges = nullptr;
+    n_pstart = NULL;
+    n_pend = NULL;
+    n_edges = NULL;
 
-	degree = nullptr;
-    p_degree = nullptr;
-    n_degree = nullptr;
-    tri_cnt = nullptr;
-
-    s_n = 0;
+	degree = NULL;
+    p_degree = NULL;
+    n_degree = NULL;
+    tri_cnt = NULL;
 
     lb = 0, ub = 1e9;
+	s_n = 0;
 }
 
 Graph::~Graph()
 {
-	if(pstart != nullptr) {
+	if(pstart != NULL) {
 		delete[] pstart;
-		pstart = nullptr;
+		pstart = NULL;
 	}
-	if(pend != nullptr) {
+	if(pend != NULL) {
 		delete[] pend;
-		pend = nullptr;
+		pend = NULL;
 	}
-	if(edges != nullptr) {
+	if(edges != NULL) {
 		delete[] edges;
-		edges = nullptr;
+		edges = NULL;
 	}
-	if(p_pstart != nullptr) {
+	if(p_pstart != NULL) {
 		delete[] p_pstart;
-		p_pstart = nullptr;
+		p_pstart = NULL;
 	}
-	if(p_pend != nullptr) {
+	if(p_pend != NULL) {
 		delete[] p_pend;
-		p_pend = nullptr;
+		p_pend = NULL;
 	}
-	if(p_edges != nullptr) {
+	if(p_edges != NULL) {
 		delete[] p_edges;
-		p_edges = nullptr;
+		p_edges = NULL;
 	}
-	if(n_pstart != nullptr) {
+	if(n_pstart != NULL) {
 		delete[] n_pstart;
-		n_pstart = nullptr;
+		n_pstart = NULL;
 	}
-	if(n_pend != nullptr) {
+	if(n_pend != NULL) {
 		delete[] n_pend;
-		n_pend = nullptr;
+		n_pend = NULL;
 	}
-	if(n_edges != nullptr) {
+	if(n_edges != NULL) {
 		delete[] n_edges;
-		n_edges = nullptr;
+		n_edges = NULL;
 	}
-	if(degree != nullptr) {
+	if(degree != NULL) {
 		delete[] degree;
-		degree = nullptr;
+		degree = NULL;
 	}
-	if(p_degree != nullptr) {
+	if(p_degree != NULL) {
 		delete[] p_degree;
-		p_degree = nullptr;
+		p_degree = NULL;
 	}
-	if(n_degree != nullptr) {
+	if(n_degree != NULL) {
 		delete[] n_degree;
-		n_degree = nullptr;
+		n_degree = NULL;
 	}
-	if(tri_cnt != nullptr) {
+	if(tri_cnt != NULL) {
 		delete[] tri_cnt;
-		tri_cnt = nullptr;
+		tri_cnt = NULL;
 	}
 }
 
+//Read graph and remove self-loops and multiple edges.
 void Graph::load_graph(string input_graph)
 {
 	Timer t;
@@ -97,16 +96,15 @@ void Graph::load_graph(string input_graph)
     string buffer;
     ifstream input_file(input_graph, ios::in);
 
-    if (!input_file.is_open()) {
-        cout<<"cannot open file : "<<input_graph<<endl;exit(1);
+    if(!input_file.is_open()) {
+        cout<<"cannot open file : "<<input_graph<<endl; exit(1);
     }
     else {
 		input_file >> n >> m;
-		map<ui, int> * s_G = new map<ui, int>[n];
-		ui u, v;
-		int flag;
-		while (input_file >> u >> v >> flag) {
-			if (u == v) continue;
+		map<ui, int> *s_G = new map<ui, int>[n];
+		ui u, v; int flag;
+		while(input_file >> u >> v >> flag) {
+			if(u == v) continue;
             assert(u >= 0 && u < n);
             assert(v >= 0 && v < n);
             assert(flag == 1 || flag == -1);
@@ -115,15 +113,15 @@ void Graph::load_graph(string input_graph)
 		}
 
 		m = pm = nm = 0;
-		for (ui i = 0; i < n; i++) {
-			const map<ui, int> & nei = s_G[i];
-			for (auto e : nei) {
-				if (e.second == 1) ++pm;
+		for(ui i = 0; i < n; i++) {
+			const map<ui, int> &nei = s_G[i];
+			for(auto e : nei) {
+				if(e.second == 1) ++pm;
 				else ++nm;
 			}
 			m += nei.size();
 		}
-		assert(m%2 == 0);assert(pm%2 == 0);assert(nm%2 == 0);
+		assert(m%2 == 0); assert(pm%2 == 0); assert(nm%2 == 0);
 		m /= 2; pm /= 2; nm /= 2;
 
         input_file.close();
@@ -148,10 +146,10 @@ void Graph::load_graph(string input_graph)
 
         //construct positive edges
         p_pstart[0] = 0;
-		for (ui i = 0; i < n; i++) {
-			const map<ui, int> & nei = s_G[i];
+		for(ui i = 0; i < n; i++) {
+			const map<ui, int> &nei = s_G[i];
 			ui idx = p_pstart[i];
-			for (auto e : nei) if (e.second == 1) {
+			for(auto e : nei) if(e.second == 1) {
 				p_edges[idx++] = e.first;
 			}
 			p_pend[i] = p_pstart[i+1] = idx;
@@ -160,10 +158,10 @@ void Graph::load_graph(string input_graph)
 
         //construct negative edges
         n_pstart[0] = 0;
-		for (ui i = 0; i < n; i++) {
-			const map<ui, int> & nei = s_G[i];
+		for(ui i = 0; i < n; i++) {
+			const map<ui, int> &nei = s_G[i];
 			ui idx = n_pstart[i];
-			for (auto e : nei) if (e.second == -1) {
+			for(auto e : nei) if(e.second == -1) {
 				n_edges[idx++] = e.first;
 			}
 			n_pend[i] = n_pstart[i+1] = idx;
@@ -172,10 +170,10 @@ void Graph::load_graph(string input_graph)
 
         //construct edges
         pstart[0] = 0;
-		for (ui i = 0; i < n; i++) {
-			const map<ui, int> & nei = s_G[i];
+		for(ui i = 0; i < n; i++) {
+			const map<ui, int> &nei = s_G[i];
 			ui idx = pstart[i];
-			for (auto e : nei) {
+			for(auto e : nei) {
 				edges[idx++] = e.first;
 			}
 			pend[i] = pstart[i+1] = idx;
@@ -195,43 +193,12 @@ void Graph::load_graph(string input_graph)
 	cout<<"\t G : n = "<<n<<", m = "<<m<<", pm = "<<pm<<", nm = "<<nm<<endl;
 }
 
-//get G's k-core
-void Graph::get_k_core(int k)
-{
-	Timer t;
-	t.restart();
-
-	bool *v_del = new bool[n];
-	memset(v_del, 0, sizeof(bool)*n);
-
-    get_degree();
-    queue<ui> q;
-    for(ui i = 0; i < n; i++) if(degree[i] < k) q.push(i);
-	while(!q.empty()) {
-		ui u = q.front(); q.pop();
-		v_del[u] = 1;
-        for(ept i = pstart[u]; i < pend[u]; i++) {
-			ui v = edges[i];
-			if ((degree[v]--) == k) {
-				q.push(v);
-			}
-        }
-	}
-
-    //rebuild
-    rebuild_graph(v_del);
-
-	delete [] v_del;
-
-    cout<<"\t get_k_core, time cost = "<<integer_to_string(t.elapsed())<<",\t k = "<<k<<", n = "<<n<<", m = "<<m<<endl;
-}
-
 //get degree for all nodes of G
 void Graph::get_degree()
 {
-	for (ui i = 0; i < n; i++) {
-        p_degree[i] = p_pstart[i+1] - p_pstart[i];
-        n_degree[i] = n_pstart[i+1] - n_pstart[i];
+	for(ui i = 0; i < n; i++) {
+        p_degree[i] = p_pend[i] - p_pstart[i];
+        n_degree[i] = n_pend[i] - n_pstart[i];
         degree[i] = p_degree[i] + n_degree[i];
 	}
 }
@@ -271,8 +238,8 @@ void Graph::get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn)
 
 	bool *v_sel = new bool[n];
 	memset(v_sel, 0, sizeof(bool)*n);
-    v_sel[u] = 1;
 
+    v_sel[u] = 1;
 	for(ept i = pstart[u]; i < pend[u]; i++) {
 		ui v = edges[i];
 		v_sel[v] = 1;
@@ -373,6 +340,7 @@ void Graph::rebuild_graph(bool *v_del)
     delete[] rid;
 }
 
+//*
 void Graph::rebuild_graph(bool *v_del, bool *e_del)
 {
 	ui *rid = new ui[n];
@@ -429,8 +397,10 @@ void Graph::rebuild_graph(bool *v_del, bool *e_del)
     delete[] rid;
 }
 
-void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
+//*
+void Graph::CTCP(int del_v, int tv, int te)
 {
+	static int last_tv = 0;
     // printf("\t CTCP: tv = %d, te = %d\n", tv, te);
 	tv = max(0, tv); te = max(0, te);
     Timer t;
@@ -448,7 +418,7 @@ void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
     memset(mark, 0, sizeof(ui)*n);
 
     if(del_v != -1) qv.push((ui)del_v);
-    if(lb_changed) {
+    if(last_tv < tv) {
         for(ui u = 0; u < n; u++) {
             if(degree[u] < tv) qv.push(u);
             for(ept i = pstart[u]; i < pend[u]; i++) {
@@ -460,6 +430,7 @@ void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
             }
         }
     }
+	last_tv = tv;
 
     while(!qv.empty() || !qe.empty()) {
         while(!qe.empty()) {
@@ -534,89 +505,63 @@ void Graph::CTCP(int del_v, bool lb_changed, int tv, int te)
     delete[] v_del;
     delete[] e_del;
 
+#ifndef NDEBUG
+	get_degree();
+	get_tricnt();
+	for(ui u = 0; u < n; u++) {
+		assert(degree[u] >= te);
+		for(ept i = pstart[u]; i < pend[u]; i++) {
+			assert(tri_cnt[i] >= tv);
+		}
+	}
+#endif
+
 // #ifndef NDEBUG
-    cout<<"\t CTCP, T : "<<integer_to_string(t.elapsed())<<",\t n="<<n<<", m="<<m<<endl;
+    cout<<"\t CTCP, T : "<<integer_to_string(t.elapsed())<<",\t n = "<<n<<", m = "<<m<<endl;
 // #endif
 }
 
-// // degeneracy-based k-plex
-// // return an upper bound of the maximum k-plex size
-// // return dOrder
-// void kplex_degen(ListLinearHeap *heap, int k, int *dOrder)
-// {
-// 	Timer t;
-// 	int *peel_sequence = new int[G.n];
-// 	int *vis = new int[G.n];
-	
-// 	for(int i = 0; i < G.n; i++) peel_sequence[i] = i;
-// 	for(int i = 0; i < G.n; i++) vis[i] = 0;
-
-// 	heap->init(G.n, G.n-1, peel_sequence, G.degree);
-// 	for(int i = 0; i < G.n; i++) {
-// 		int u, deg;
-// 		heap->pop_min(u, deg);
-// 		dOrder[i] = u;
-
-// 		// if(deg+k >= G.n-i+1 && G.n-i+1 > lb) lb = G.n-i+1;
-// 		ub = max(ub, min(deg+k, G.n-i+1));
-
-// 		for(int j = G.pstart[u]; j < G.pend[u]; j++) {
-// 			int v = G.edges[j];
-// 			if(vis[v] == 0) heap->decrement(v, 1);
-// 		}
-// 		vis[u] = 1;
-// 	}
-
-// 	// for(int i = 0; i < G.n; i++) {
-// 	// 	printf("%d ", dOrder[i]);
-// 	// }
-// 	// printf("\n");
-
-// 	delete [] peel_sequence;
-// 	delete [] vis;
-
-// }
-
+//*
 void Graph::heu_signed_kplex(int rounds, int k)
 {
-	Timer t; t.restart();
-	if(rounds < 1) return;
+// 	Timer t; t.restart();
+// 	if(rounds < 1) return;
 
-	KPLEX_MATRIX *kplex_solver = new KPLEX_MATRIX();
-	kplex_solver->allocateMemory(n, m/2);
+// 	KPLEX_MATRIX *kplex_solver = new KPLEX_MATRIX();
+// 	kplex_solver->allocateMemory(n, m/2);
 
-	vector<pair<int,int> > vp; vp.reserve(m/2);
-	vector<int> sgn; sgn.reserve(m/2);
+// 	vector<pair<int,int> > vp; vp.reserve(m/2);
+// 	vector<int> sgn; sgn.reserve(m/2);
 
-	for(int round = 0; round < rounds && round < n; round++) {
-		get_degree();
-		ui u = 0;
-		for(ui i = 1; i < n; i++) if(degree[u] > degree[i]) u = i;
-		// printf("%d %d\n", u, degree[u]);
+// 	for(int round = 0; round < rounds && round < n; round++) {
+// 		get_degree();
+// 		ui u = 0;
+// 		for(ui i = 1; i < n; i++) if(degree[u] > degree[i]) u = i;
+// 		// printf("%d %d\n", u, degree[u]);
 
-		vp.clear();
-		sgn.clear();
-		get_g(u, vp, sgn);
+// 		vp.clear();
+// 		sgn.clear();
+// 		get_g(u, vp, sgn);
 
-        //heuristically find signed kplex
-		kplex_solver->load_graph(s_n, vp, sgn);
-		// kplex_solver->heu_kPlex(K, kplex);
-// #ifndef NDEBUG
-		// printf("\t heu_kplex = %d \n", (int)kplex.size());
-		// vector<ui> KPLEX; KPLEX.clear();
-		kplex_solver->kPlex(K, kplex, true);
-		printf("\t KPLEX = %d \n", (int)kplex.size());
-// #endif
-		bool lb_changed = 0;
-		if(kplex.size() > lb) {
-			if(kplex.size() > lb) lb_changed = 1;
-			lb = kplex.size();
-		}
-        // CTCP
-		CTCP(u, lb_changed, lb+1-K, lb+1-2*K);
-        // CTCP(-1, lb_changed, lb+1-K, lb+1-2*K);
-	}
-	cout<<"\t heu_find_kplex, T : "<<integer_to_string(t.elapsed())<<",\t heu_kplex_size = "<<kplex.size()<<endl;
+//         //heuristically find signed kplex
+// 		kplex_solver->load_graph(s_n, vp, sgn);
+// 		// kplex_solver->heu_kPlex(K, kplex);
+// // #ifndef NDEBUG
+// 		// printf("\t heu_kplex = %d \n", (int)kplex.size());
+// 		// vector<ui> KPLEX; KPLEX.clear();
+// 		kplex_solver->kPlex(K, kplex);
+// 		printf("\t KPLEX = %d \n", (int)kplex.size());
+// // #endif
+// 		bool lb_changed = 0;
+// 		if(kplex.size() > lb) {
+// 			if(kplex.size() > lb) lb_changed = 1;
+// 			lb = kplex.size();
+// 		}
+//         // CTCP
+// 		CTCP(u, lb_changed, lb+1-K, lb+1-2*K);
+//         // CTCP(-1, lb_changed, lb+1-K, lb+1-2*K);
+// 	}
+// 	cout<<"\t heu_find_kplex, T : "<<integer_to_string(t.elapsed())<<",\t heu_kplex_size = "<<kplex.size()<<endl;
 }
 
 void Graph::find_signed_kplex()
@@ -624,54 +569,44 @@ void Graph::find_signed_kplex()
 	Timer t;
 	t.restart();
 
-    lb = 0, ub = n;
+    lb = 2*K-2, ub = n;
 
 	// find heuristic signed k-plex
 	// CTCP(-1, 1, lb+1-K, lb+1-2*K);
 	// heu_signed_kplex(10, K);
 	// return;
 
-    if((int)kplex.size() < ub) {
-        lb = max((int)kplex.size(), 2*K-2);
-        get_k_core(lb+1-K);
+	lb = max((int)kplex.size(), lb);
+	CTCP(-1, lb+1-K, lb+1-2*K);
+	printf("-----------------------------------\n");
+
+	KPLEX_MATRIX *kplex_solver = new KPLEX_MATRIX();
+	kplex_solver->allocateMemory(n, m/2);
+
+	vector<pair<int,int> > vp; vp.reserve(m/2);
+	vector<int> sgn; sgn.reserve(m/2);
+
+	while(n > 0) {
+		//get u
 		get_degree();
-		get_tricnt();
-		CTCP(-1, 1, lb+1-K, lb+1-2*K);
-		printf("---------------------------\n");
+		ui u = 0;
+		for(ui i = 1; i < n; i++) if(degree[u] > degree[i]) u = i;
+		
+		//get g
+		vp.clear();
+		sgn.clear();
+		get_g(u, vp, sgn);
 
-		KPLEX_MATRIX *kplex_solver = new KPLEX_MATRIX();
-		kplex_solver->allocateMemory(n, m/2);
+		//kplex
+		kplex_solver->load_graph(s_n, vp, sgn);
+		kplex_solver->kPlex(K, kplex);
 
-        vector<pair<int,int> > vp; vp.reserve(m/2);
-		vector<int> sgn; sgn.reserve(m/2);
-
-        while(n > 0) {
-            //get u
-			get_degree();
-            ui u = 0;
-            for(ui i = 1; i < n; i++) if(degree[u] > degree[i]) u = i;
-            
-            //get g
-			vp.clear();
-			sgn.clear();
-			get_g(u, vp, sgn);
-
-            //kplex
-			kplex_solver->load_graph(s_n, vp, sgn);
-			kplex_solver->kPlex(K, kplex, true);
-			
-			bool lb_changed = 0;
-
-			if(kplex.size() > lb) {
-				if(kplex.size() > lb) lb_changed = 1;
-				lb = kplex.size();
-			}
+		if(kplex.size() > lb) lb = kplex.size();
 #ifndef NDEBUG
-			printf("\t kplex = %d \n", (int)kplex.size());
+		printf("\t kplex = %d \n", (int)kplex.size());
 #endif
-            // CTCP
-            CTCP(u, lb_changed, lb+1-K, lb+1-2*K);
-        }
-    }
+		// CTCP
+		CTCP(u, lb+1-K, lb+1-2*K);
+	}
     cout<<"\t find_signed_kplex, T : "<<integer_to_string(t.elapsed())<<",\t kplex_size="<<kplex.size()<<endl;
 }
