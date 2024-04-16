@@ -1,3 +1,0 @@
-	 load_graph: time cost = 1,159,301
-	 G : n = 131829, m = 711210, pm = 592013, nm = 119197
-	 Graph: data_in/3.edges,	 k: 2
