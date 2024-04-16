@@ -1,3 +1,34 @@
+//get k-core
+void Graph::get_k_core(int k)
+{
+	Timer t;
+	t.restart();
+
+	bool *v_del = new bool[n];
+	memset(v_del, 0, sizeof(bool)*n);
+
+    get_degree();
+    queue<ui> q;
+    for(ui i = 0; i < n; i++) if(degree[i] < k) q.push(i);
+	while(!q.empty()) {
+		ui u = q.front(); q.pop();
+		v_del[u] = 1;
+        for(ept i = pstart[u]; i < pend[u]; i++) {
+			ui v = edges[i];
+			if ((degree[v]--) == k) {
+				q.push(v);
+			}
+        }
+	}
+
+    //rebuild
+    rebuild_graph(v_del);
+
+	delete [] v_del;
+
+    cout<<"\t get_k_core, time cost = "<<integer_to_string(t.elapsed())<<",\t k = "<<k<<", n = "<<n<<", m = "<<m<<endl;
+}
+
 void Graph::heu_signed_kplex(int rounds, int k)
 {
 	if(rounds < 1) return;

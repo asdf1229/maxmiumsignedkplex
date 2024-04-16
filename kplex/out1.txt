@@ -1,0 +1,53 @@
+	 load_graph: time cost = 21,255
+	 G : n = 5881, m = 21492, pm = 21492, nm = 0
+	 Graph: bitcoin.txt,	 k: 5
+	 CTCP: tv = 4, te = -1
+	 CTCP, T : 8,834,	 n = 1843, m = 15124
+-----------------------------------
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 11,907,	 n = 111, m = 1497
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 730,	 n = 110, m = 1484
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 738,	 n = 108, m = 1459
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 707,	 n = 107, m = 1446
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 699,	 n = 106, m = 1433
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 694,	 n = 105, m = 1420
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 691,	 n = 104, m = 1406
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 686,	 n = 103, m = 1392
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 671,	 n = 102, m = 1377
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 664,	 n = 101, m = 1362
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 658,	 n = 100, m = 1349
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 653,	 n = 99, m = 1334
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 648,	 n = 98, m = 1319
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 635,	 n = 97, m = 1302
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 622,	 n = 96, m = 1288
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 616,	 n = 95, m = 1273
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 646,	 n = 93, m = 1239
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 602,	 n = 92, m = 1223
+	 CTCP: tv = 13, te = 8
+	 CTCP, T : 623,	 n = 88, m = 1147
+	 CTCP: tv = 15, te = 10
+	 CTCP, T : 1,144,	 n = 25, m = 234
+	 CTCP: tv = 15, te = 10
+	 CTCP, T : 84,	 n = 24, m = 219
+	 CTCP: tv = 15, te = 10
+	 CTCP, T : 76,	 n = 23, m = 204
+	 CTCP: tv = 15, te = 10
+	 CTCP, T : 157,	 n = 0, m = 0
+	 find_signed_kplex, T : 64,062,	 kplex_size=19

@@ -18,7 +18,7 @@
 #include <cmath>
 #include <ctime>
 #include <algorithm>
-// #define NDEBUG
+#define NDEBUG
 #include <stack>
 #include <assert.h>
 

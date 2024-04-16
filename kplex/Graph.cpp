@@ -215,13 +215,29 @@ void Graph::get_tricnt()
 
 		for(ept j = pstart[u]; j < pend[u]; j++) {
 			ui v = edges[j];
-			for(ept k = pstart[v]; k < pend[v]; k++) {
-				ui w = edges[k];
-				if(mark[w] && v < w) {
-					tri_cnt[j]++;
-					tri_cnt[k]++;
-					tri_cnt[mark[w]-1]++;
-				}
+			if(u < v) {
+				for(ept k = pstart[v]; k < pend[v]; k++) {
+					ui w = edges[k];
+					if(mark[w] && v < w) {
+						ept id_uv = j;
+						ept id_vu = pstart[v] + find(edges + pstart[v], edges + pend[v], u);
+						ept id_vw = k;
+						ept id_wv = pstart[w] + find(edges + pstart[w], edges + pend[w], v);
+						ept id_uw = mark[w]-1;
+						ept id_wu = pstart[w] + find(edges + pstart[w], edges + pend[w], u);
+#ifndef NDEBUG
+						ept id_uv1 = pstart[u] + find(edges + pstart[u], edges + pend[u], v);
+						ept id_vw1 = pstart[v] + find(edges + pstart[v], edges + pend[v], w);
+						ept id_uw1 = pstart[u] + find(edges + pstart[u], edges + pend[u], w);
+						assert(id_uv == id_uv1);
+						assert(id_vw == id_vw1);
+						assert(id_uw == id_uw1);
+#endif
+						tri_cnt[id_uv]++; tri_cnt[id_vu]++;
+						tri_cnt[id_vw]++; tri_cnt[id_wv]++;
+						tri_cnt[id_uw]++; tri_cnt[id_wu]++;
+					}
+				}		
 			}
 		}
 
@@ -376,6 +392,7 @@ void Graph::rebuild_graph(bool *v_del, bool *e_del)
 					}
 				}
 			}
+			assert(pos == p_pos + n_pos);
 			pend[cnt] = pos;
 			p_pend[cnt] = p_pos;
 			n_pend[cnt] = n_pos;
@@ -401,7 +418,7 @@ void Graph::rebuild_graph(bool *v_del, bool *e_del)
 void Graph::CTCP(int del_v, int tv, int te)
 {
 	static int last_tv = 0;
-    // printf("\t CTCP: tv = %d, te = %d\n", tv, te);
+    printf("\t CTCP: tv = %d, te = %d\n", tv, te);
 	tv = max(0, tv); te = max(0, te);
     Timer t;
 	t.restart();
@@ -436,9 +453,15 @@ void Graph::CTCP(int del_v, int tv, int te)
         while(!qe.empty()) {
 			auto ue = qe.front(); qe.pop();
 			ui u = ue.first; ept id_uv = ue.second; ui v = edges[id_uv];
-			ui id_vu = pstart[v] + find(edges + pstart[v], edges + pend[v], u);
+			ept id_vu = pstart[v] + find(edges + pstart[v], edges + pend[v], u);
+			assert(pstart[u] <= id_uv && id_uv < pend[u]);
+			assert(pstart[v] <= id_vu && id_vu < pend[v]);
 			assert(e_del[id_uv] == e_del[id_vu]);
-			if(v_del[u] || v_del[v] || e_del[id_uv]) continue;
+			if(v_del[u] || v_del[v] || e_del[id_uv]) {
+				assert(0);
+				assert(e_del[id_uv] == 1 && e_del[id_vu] == 1);
+				continue;
+			}
             e_del[id_uv] = 1;
 			e_del[id_vu] = 1;
 
@@ -449,14 +472,14 @@ void Graph::CTCP(int del_v, int tv, int te)
 
             for(ept j = pstart[v]; j < pend[v]; j++) if(!e_del[j]) {
                 ui w = edges[j];
-                if(!v_del[w] && mark[w]) { // triangle count--
-                    ui id_uw = mark[w] - 1;
-                    ui id_wu = pstart[w] + find(edges + pstart[w], edges + pend[w], u);
+                if(mark[w]) { // triangle count--
+                    ept id_uw = mark[w] - 1;
+                    ept id_wu = pstart[w] + find(edges + pstart[w], edges + pend[w], u);
                     if((tri_cnt[id_uw]--) == te) qe.push(make_pair(u, id_uw));
                     tri_cnt[id_wu]--;
 
-                    ui id_vw = j;
-                    ui id_wv = pstart[w] + find(edges + pstart[w], edges + pend[w], v);
+                    ept id_vw = j;
+                    ept id_wv = pstart[w] + find(edges + pstart[w], edges + pend[w], v);
                     if((tri_cnt[id_vw]--) == te) qe.push(make_pair(v, id_vw));
                     tri_cnt[id_wv]--;
                 }
@@ -466,41 +489,43 @@ void Graph::CTCP(int del_v, int tv, int te)
         }
         if(!qv.empty()) {
             ui u = qv.front(); qv.pop();
-			// printf("%d\n", u);
+			// printf("u = %d\n", u);
             if(v_del[u]) continue;
             v_del[u] = 1;
 
-			for(ept i = pstart[u]; i < pend[u]; i++) {
-				ui v = edges[i];
-				if(!e_del[i] && !v_del[v]) {
-					if((degree[v]--) == tv) qv.push(v);
-				}
-				e_del[i] = 1;
-			}
-
             for(ept i = pstart[u]; i < pend[u]; i++) if(!e_del[i]) mark[edges[i]] = i+1;
 
-			for(ept i = pstart[u]; i < pend[u]; i++) {
-				ui v = edges[i]; 
-                if(e_del[i] || v_del[v]) continue;
-                for(ept j = pstart[v]; j < pend[v]; j++) {
+			for(ept i = pstart[u]; i < pend[u]; i++) if(!e_del[i]) {
+				ui v = edges[i];
+                for(ept j = pstart[v]; j < pend[v]; j++) if(!e_del[j]) {
                     ui w = edges[j];
-                    if(e_del[j] || v_del[w]) continue;
-                    if(mark[w] && w > v) { // triangle count--
-                        ui id_vw = j;
-                        ui id_wv = pstart[w] + find(edges + pstart[w], edges + pend[w], v);
-                        if((tri_cnt[id_vw]--) == te) qe.push(make_pair(u, id_vw));
+                    if(mark[w] && v < w) { // triangle count--
+                        ept id_vw = j;
+                        ept id_wv = pstart[w] + find(edges + pstart[w], edges + pend[w], v);
+                        if((tri_cnt[id_vw]--) == te) qe.push(make_pair(v, id_vw));
                         tri_cnt[id_wv]--;
                     }
                 }
 			}
 
             for(ept i = pstart[u]; i < pend[u]; i++) if(!e_del[i]) mark[edges[i]] = 0;
+
+			for(ept i = pstart[u]; i < pend[u]; i++) if(!e_del[i]) {
+				ui v = edges[i];
+				if((degree[v]--) == tv) qv.push(v);
+				ept id_uv = i;
+				ept id_vu = pstart[v] + find(edges + pstart[v], edges + pend[v], u);
+				assert(edges[id_uv] == v && edges[id_vu] == u);
+				e_del[id_uv] = 1;
+				e_del[id_vu] = 1;
+			}
         }
     }
 
-	rebuild_graph(v_del);
-    // rebuild_graph(v_del, e_del);
+	// rebuild_graph(v_del);
+    rebuild_graph(v_del, e_del);
+
+	// printf("n = %d, m = %d\n", n, m);
 
     delete[] v_del;
     delete[] e_del;
@@ -509,9 +534,14 @@ void Graph::CTCP(int del_v, int tv, int te)
 	get_degree();
 	get_tricnt();
 	for(ui u = 0; u < n; u++) {
-		assert(degree[u] >= te);
+		assert(degree[u] >= tv);
 		for(ept i = pstart[u]; i < pend[u]; i++) {
-			assert(tri_cnt[i] >= tv);
+			if(tri_cnt[i] < te) {
+				printf("%d %d\n", tri_cnt[i], te);
+				printf("%d %d %d\n", u, i, edges[i]);
+				printf("%d %d %d\n", degree[u], pstart[u], pend[u]);
+			}
+			assert(tri_cnt[i] >= te);
 		}
 	}
 #endif

@@ -10,7 +10,7 @@ The original code and license can be found at: https://github.com/LijunChang/Max
 #include "Timer.h"
 #include "LinearHeap.h"
 
-// #define _SECOND_ORDER_PRUNING_
+#define _SECOND_ORDER_PRUNING_
 
 class KPLEX_MATRIX {
 private:

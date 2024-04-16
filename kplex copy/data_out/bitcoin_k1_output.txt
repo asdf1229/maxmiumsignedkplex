@@ -1,7 +1,0 @@
-	 load_graph: time cost = 18,839
-	 G : n = 5881, m = 21492, pm = 18250, nm = 3242
-	 Graph: data_in/bitcoin.txt,	 k: 1
-	 heu_find_kplex, T : 73,440,	 heu_kplex_size = 8
-	 get_k_core, time cost = 2,	 k = 8, n = 336, m = 5262
----------------------------
-	 find_signed_kplex, T : 352,273,	 kplex_size=11
