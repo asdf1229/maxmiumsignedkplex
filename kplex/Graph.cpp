@@ -379,11 +379,11 @@ void Graph::rebuild_graph(bool *v_del, bool *e_del)
 					while(p_pointer < p_pend[u] && p_edges[p_pointer] < v) p_pointer++;
 					while(n_pointer < n_pend[u] && n_edges[n_pointer] < v) n_pointer++;
 
-					if(p_edges[p_pointer] == v) {
+					if(p_pointer < p_pend[u] && p_edges[p_pointer] == v) {
 						p_edges[p_pos++] = rid[v];
 						p_pointer++;
 					}
-					else if(n_edges[n_pointer] == v) {
+					else if(n_pointer < n_pend[u] && n_edges[n_pointer] == v) {
 						n_edges[n_pos++] = rid[v];
 						n_pointer++;
 					}
@@ -441,7 +441,6 @@ void Graph::CTCP(int del_v, int tv, int te)
             for(ept i = pstart[u]; i < pend[u]; i++) {
                 ui v = edges[i];
                 if(u < v && tri_cnt[i] < te) {
-                    // printf("%d %d\n", u, v);
                     qe.push(make_pair(u, i));
                 }
             }
@@ -522,10 +521,8 @@ void Graph::CTCP(int del_v, int tv, int te)
         }
     }
 
-	// rebuild_graph(v_del);
-    rebuild_graph(v_del, e_del);
-
-	// printf("n = %d, m = %d\n", n, m);
+	rebuild_graph(v_del);
+    // rebuild_graph(v_del, e_del);
 
     delete[] v_del;
     delete[] e_del;
@@ -536,11 +533,6 @@ void Graph::CTCP(int del_v, int tv, int te)
 	for(ui u = 0; u < n; u++) {
 		assert(degree[u] >= tv);
 		for(ept i = pstart[u]; i < pend[u]; i++) {
-			if(tri_cnt[i] < te) {
-				printf("%d %d\n", tri_cnt[i], te);
-				printf("%d %d %d\n", u, i, edges[i]);
-				printf("%d %d %d\n", degree[u], pstart[u], pend[u]);
-			}
 			assert(tri_cnt[i] >= te);
 		}
 	}
