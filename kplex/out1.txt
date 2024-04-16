@@ -1,53 +1,169 @@
-	 load_graph: time cost = 21,255
-	 G : n = 5881, m = 21492, pm = 21492, nm = 0
-	 Graph: bitcoin.txt,	 k: 5
-	 CTCP: tv = 4, te = -1
-	 CTCP, T : 8,834,	 n = 1843, m = 15124
+	 load_graph: time cost = 56,191
+	 G : n = 5881, m = 21492, pm = 18250, nm = 3242
+	 Graph: g1_bitcoin.edges,	 k: 3
+	 CTCP, T : 17,861,	 n = 3588, m = 19202
 -----------------------------------
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 11,907,	 n = 111, m = 1497
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 730,	 n = 110, m = 1484
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 738,	 n = 108, m = 1459
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 707,	 n = 107, m = 1446
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 699,	 n = 106, m = 1433
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 694,	 n = 105, m = 1420
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 691,	 n = 104, m = 1406
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 686,	 n = 103, m = 1392
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 671,	 n = 102, m = 1377
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 664,	 n = 101, m = 1362
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 658,	 n = 100, m = 1349
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 653,	 n = 99, m = 1334
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 648,	 n = 98, m = 1319
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 635,	 n = 97, m = 1302
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 622,	 n = 96, m = 1288
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 616,	 n = 95, m = 1273
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 646,	 n = 93, m = 1239
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 602,	 n = 92, m = 1223
-	 CTCP: tv = 13, te = 8
-	 CTCP, T : 623,	 n = 88, m = 1147
-	 CTCP: tv = 15, te = 10
-	 CTCP, T : 1,144,	 n = 25, m = 234
-	 CTCP: tv = 15, te = 10
-	 CTCP, T : 84,	 n = 24, m = 219
-	 CTCP: tv = 15, te = 10
-	 CTCP, T : 76,	 n = 23, m = 204
-	 CTCP: tv = 15, te = 10
-	 CTCP, T : 157,	 n = 0, m = 0
-	 find_signed_kplex, T : 64,062,	 kplex_size=19
+	 get_g, T : 92,	 n=282
+load graph of size n=282, m=2175
+	 kplex = 11 
+	 CTCP, T : 18,753,	 n = 213, m = 3147
+	 get_g, T : 32,	 n=112
+load graph of size n=112, m=1479
+	 kplex = 11 
+	 CTCP, T : 6,216,	 n = 212, m = 3138
+	 get_g, T : 47,	 n=181
+load graph of size n=181, m=2651
+	 kplex = 11 
+	 CTCP, T : 6,503,	 n = 211, m = 3129
+	 get_g, T : 46,	 n=167
+load graph of size n=167, m=2422
+	 kplex = 11 
+	 CTCP, T : 6,213,	 n = 210, m = 3120
+	 get_g, T : 46,	 n=172
+load graph of size n=172, m=2498
+	 kplex = 11 
+	 CTCP, T : 6,507,	 n = 209, m = 3111
+	 get_g, T : 46,	 n=172
+load graph of size n=172, m=2538
+	 kplex = 11 
+	 CTCP, T : 6,498,	 n = 208, m = 3102
+	 get_g, T : 49,	 n=188
+load graph of size n=188, m=2754
+	 kplex = 11 
+	 CTCP, T : 6,499,	 n = 207, m = 3093
+	 get_g, T : 46,	 n=163
+load graph of size n=163, m=2404
+	 kplex = 11 
+	 CTCP, T : 5,878,	 n = 206, m = 3084
+	 get_g, T : 36,	 n=151
+load graph of size n=151, m=2094
+	 kplex = 11 
+	 CTCP, T : 5,033,	 n = 205, m = 3075
+	 get_g, T : 33,	 n=162
+load graph of size n=162, m=2377
+	 kplex = 13 
+	 CTCP, T : 6,119,	 n = 114, m = 1531
+	 get_g, T : 36,	 n=107
+load graph of size n=107, m=1413
+	 kplex = 13 
+	 CTCP, T : 3,169,	 n = 113, m = 1520
+	 get_g, T : 25,	 n=111
+load graph of size n=111, m=1476
+	 kplex = 13 
+	 CTCP, T : 3,115,	 n = 112, m = 1509
+	 get_g, T : 18,	 n=89
+load graph of size n=89, m=1109
+	 kplex = 13 
+	 CTCP, T : 2,468,	 n = 111, m = 1497
+	 get_g, T : 16,	 n=108
+load graph of size n=108, m=1448
+	 kplex = 13 
+	 CTCP, T : 2,456,	 n = 110, m = 1484
+	 get_g, T : 13,	 n=67
+load graph of size n=67, m=883
+	 kplex = 13 
+	 CTCP, T : 2,397,	 n = 108, m = 1459
+	 get_g, T : 15,	 n=105
+load graph of size n=105, m=1404
+	 kplex = 13 
+	 CTCP, T : 2,370,	 n = 107, m = 1446
+	 get_g, T : 15,	 n=103
+load graph of size n=103, m=1370
+	 kplex = 13 
+	 CTCP, T : 2,342,	 n = 106, m = 1433
+	 get_g, T : 14,	 n=102
+load graph of size n=102, m=1357
+	 kplex = 13 
+	 CTCP, T : 2,316,	 n = 105, m = 1420
+	 get_g, T : 14,	 n=91
+load graph of size n=91, m=1193
+	 kplex = 13 
+	 CTCP, T : 2,910,	 n = 104, m = 1406
+	 get_g, T : 23,	 n=100
+load graph of size n=100, m=1325
+	 kplex = 13 
+	 CTCP, T : 2,895,	 n = 103, m = 1392
+	 get_g, T : 19,	 n=69
+load graph of size n=69, m=912
+	 kplex = 13 
+	 CTCP, T : 2,889,	 n = 102, m = 1377
+	 get_g, T : 19,	 n=73
+load graph of size n=73, m=992
+	 kplex = 13 
+	 CTCP, T : 2,844,	 n = 101, m = 1362
+	 get_g, T : 22,	 n=97
+load graph of size n=97, m=1281
+	 kplex = 13 
+	 CTCP, T : 2,550,	 n = 100, m = 1349
+	 get_g, T : 16,	 n=96
+load graph of size n=96, m=1268
+	 kplex = 13 
+	 CTCP, T : 2,156,	 n = 99, m = 1334
+	 get_g, T : 13,	 n=98
+load graph of size n=98, m=1314
+	 kplex = 13 
+	 CTCP, T : 2,128,	 n = 98, m = 1319
+	 get_g, T : 13,	 n=96
+load graph of size n=96, m=1276
+	 kplex = 13 
+	 CTCP, T : 2,140,	 n = 97, m = 1302
+	 get_g, T : 13,	 n=96
+load graph of size n=96, m=1282
+	 kplex = 13 
+	 CTCP, T : 2,073,	 n = 96, m = 1288
+	 get_g, T : 14,	 n=94
+load graph of size n=94, m=1253
+	 kplex = 13 
+	 CTCP, T : 2,048,	 n = 95, m = 1273
+	 get_g, T : 13,	 n=93
+load graph of size n=93, m=1234
+	 kplex = 13 
+	 CTCP, T : 2,249,	 n = 93, m = 1239
+	 get_g, T : 20,	 n=91
+load graph of size n=91, m=1202
+	 kplex = 13 
+	 CTCP, T : 2,486,	 n = 92, m = 1223
+	 get_g, T : 19,	 n=89
+load graph of size n=89, m=1168
+	 kplex = 13 
+	 CTCP, T : 2,439,	 n = 88, m = 1147
+	 get_g, T : 25,	 n=71
+load graph of size n=71, m=867
+	 kplex = 13 
+	 CTCP, T : 2,296,	 n = 87, m = 1133
+	 get_g, T : 18,	 n=83
+load graph of size n=83, m=1061
+	 kplex = 13 
+	 CTCP, T : 1,779,	 n = 86, m = 1119
+	 get_g, T : 13,	 n=84
+load graph of size n=84, m=1084
+	 kplex = 13 
+	 CTCP, T : 1,810,	 n = 85, m = 1104
+	 get_g, T : 12,	 n=83
+load graph of size n=83, m=1065
+	 kplex = 13 
+	 CTCP, T : 1,749,	 n = 84, m = 1086
+	 get_g, T : 12,	 n=82
+load graph of size n=82, m=1047
+	 kplex = 13 
+	 CTCP, T : 1,686,	 n = 83, m = 1070
+	 get_g, T : 11,	 n=81
+load graph of size n=81, m=1031
+	 kplex = 13 
+	 CTCP, T : 1,673,	 n = 82, m = 1054
+	 get_g, T : 11,	 n=81
+load graph of size n=81, m=1035
+	 kplex = 13 
+	 CTCP, T : 2,090,	 n = 81, m = 1038
+	 get_g, T : 17,	 n=75
+load graph of size n=75, m=934
+	 kplex = 13 
+	 CTCP, T : 2,022,	 n = 80, m = 1022
+	 get_g, T : 16,	 n=79
+load graph of size n=79, m=1004
+	 kplex = 13 
+	 CTCP, T : 2,030,	 n = 79, m = 1006
+	 get_g, T : 17,	 n=79
+load graph of size n=79, m=1006
+	 kplex = 14 
+	 find_signed_kplex, T : 321,218,	 kplex_size=14

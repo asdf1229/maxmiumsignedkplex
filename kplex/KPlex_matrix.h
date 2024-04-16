@@ -10,7 +10,7 @@ The original code and license can be found at: https://github.com/LijunChang/Max
 #include "Timer.h"
 #include "LinearHeap.h"
 
-#define _SECOND_ORDER_PRUNING_
+// #define _SECOND_ORDER_PRUNING_
 
 class KPLEX_MATRIX {
 private:
@@ -163,13 +163,13 @@ public:
 #endif
     }
 
-    void kPlex(ui K_, std::vector<ui> &kplex)
+    void kPlex(ui K_, std::vector<ui> &kplex, bool choose_zero)
     {
         K = K_;
         best_solution_size = kplex.size();
         ui R_end = 0;
         initialization(R_end);
-        if(R_end) kplex_search(0, R_end, 1, true, n);
+        if(R_end) kplex_search(0, R_end, 1, choose_zero, n);
         if(best_solution_size > kplex.size()) {
             kplex.clear();
             for(ui i = 0; i < best_solution_size; i++) kplex.push_back(best_solution[i]);
