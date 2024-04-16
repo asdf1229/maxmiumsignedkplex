@@ -1,7 +1,0 @@
-	 load_graph: time cost = 60,707
-	 G : n = 9, m = 24, pm = 16, nm = 8
-	 Graph: 5/in.txt,	 k: 3
-	 vertex reduce, T : 3,	 n=9, m=24
-	 EnumSKCE: time cost  = 221
-tot = 31
-ans = 4
