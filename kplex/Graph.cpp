@@ -247,7 +247,7 @@ void Graph::get_tricnt()
 	delete [] mark;
 }
 
-void Graph::get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn)
+ui Graph::get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn)
 {
     Timer t;
 	t.restart();
@@ -266,9 +266,11 @@ void Graph::get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn)
 	}
 
     //build adjacent matrix
+	ui rid_u = n;
     ui *rid = new ui[n];
 	ui cnt = 0;
 	for(ui i = 0; i < n; i++) if(v_sel[i]) {
+		if(u == i) rid_u = cnt;
 		rid[i] = cnt++;
 	}
     s_n = cnt;
@@ -300,60 +302,8 @@ void Graph::get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn)
 #ifndef NDEBUG
 	cout<<"\t get_g, T : "<<integer_to_string(t.elapsed())<<",\t n="<<s_n<<endl;
 #endif
-}
-
-void Graph::rebuild_graph(bool *v_del)
-{
-	ui *rid = new ui[n];
-	ui cnt = 0;
-	for(ui i = 0; i < n; i++) if(!v_del[i]) {
-		rid[i] = cnt++;
-	}
-
-    if(cnt != n) {
-        cnt = 0;
-		ept pos = 0, p_pos = 0, n_pos = 0;
-        pstart[0] = p_pstart[0] = n_pstart[0] = 0;
-		for(ui u = 0; u < n; u++) if(!v_del[u]) {
-			for(ept i = pstart[u]; i < pend[u]; i++) {
-				ui v = edges[i];
-				if(!v_del[v]) {
-					edges[pos++] = rid[v];
-				}
-			}
-			pend[cnt] = pos;
-
-			for(ept i = p_pstart[u]; i < p_pend[u]; i++) {
-				ui v = p_edges[i];
-				if(!v_del[v]) {
-					p_edges[p_pos++] = rid[v];
-				}
-			}
-			p_pend[cnt] = p_pos;
-
-			for(ept i = n_pstart[u]; i < n_pend[u]; i++) {
-				ui v = n_edges[i];
-				if(!v_del[v]) {
-					n_edges[n_pos++] = rid[v];
-				}
-			}
-			n_pend[cnt] = n_pos;
-			cnt++;
-		}
-
-		n = cnt;
-		m = pos / 2;
-		pm = p_pos / 2;
-		nm = n_pos / 2;
-
-		for(ui u = 1; u <= n; u++) {
-			pstart[u] = pend[u-1];
-			p_pstart[u] = p_pend[u-1];
-			n_pstart[u] = n_pend[u-1];
-		}
-    }
-
-    delete[] rid;
+	assert(rid_u != n);
+	return rid_u;
 }
 
 void Graph::rebuild_graph(bool *v_del, bool *e_del)
@@ -416,10 +366,12 @@ void Graph::rebuild_graph(bool *v_del, bool *e_del)
 void Graph::CTCP(int del_v, int tv, int te)
 {
 	static int last_tv = 0;
-    // printf("\t CTCP: tv = %d, te = %d\n", tv, te);
-	tv = max(0, tv); te = max(0, te);
     Timer t;
 	t.restart();
+
+    // printf("\t CTCP: tv = %d, te = %d\n", tv, te);
+	tv = max(0, tv); te = max(0, te);
+	assert(last_tv <= tv);
 
 	queue<ui> qv;
 	queue<pair<ui, ept>> qe; //from, idx
@@ -433,7 +385,7 @@ void Graph::CTCP(int del_v, int tv, int te)
     memset(mark, 0, sizeof(ui)*n);
 
     if(del_v != -1) qv.push((ui)del_v);
-    // if(last_tv < tv) {
+    if(last_tv < tv) {
         for(ui u = 0; u < n; u++) {
             if(degree[u] < tv) qv.push(u);
             for(ept i = pstart[u]; i < pend[u]; i++) {
@@ -443,7 +395,7 @@ void Graph::CTCP(int del_v, int tv, int te)
                 }
             }
         }
-    // }
+    }
 	last_tv = tv;
 
 	while(!qv.empty() || !qe.empty()) {
@@ -480,7 +432,6 @@ void Graph::CTCP(int del_v, int tv, int te)
 		}
 		if(!qv.empty()) {
 			ui u = qv.front(); qv.pop();
-			// printf("u = %d\n", u);
 			if(v_del[u]) continue;
 			v_del[u] = 1;
 
@@ -512,7 +463,6 @@ void Graph::CTCP(int del_v, int tv, int te)
 		}
 	}
 
-	// rebuild_graph(v_del);
 	rebuild_graph(v_del, e_del);
 
 	delete[] v_del;
@@ -608,11 +558,12 @@ void Graph::find_signed_kplex()
 		//get g
 		vp.clear();
 		sgn.clear();
-		get_g(u, vp, sgn);
+		ui rid_u = get_g(u, vp, sgn);
+		assert(0 <= rid_u && rid_u < n);
 
 		//kplex
 		kplex_solver->load_graph(s_n, vp, sgn);
-		kplex_solver->kPlex(K, kplex, !(s_n == n));
+		kplex_solver->kPlex(K, kplex, (s_n == n) ? -1 : rid_u);
 
 		if(kplex.size() > lb) lb = kplex.size();
 #ifndef NDEBUG

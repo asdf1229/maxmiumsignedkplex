@@ -10,7 +10,7 @@ The original code and license can be found at: https://github.com/LijunChang/Max
 #include "Timer.h"
 #include "LinearHeap.h"
 
-// #define _SECOND_ORDER_PRUNING_
+#define _SECOND_ORDER_PRUNING_
 
 class KPLEX_MATRIX {
 private:
@@ -163,13 +163,13 @@ public:
 #endif
     }
 
-    void kPlex(ui K_, std::vector<ui> &kplex, bool choose_zero)
+    void kPlex(ui K_, std::vector<ui> &kplex, int choose_u)
     {
         K = K_;
         best_solution_size = kplex.size();
         ui R_end = 0;
-        initialization(R_end);
-        if(R_end) kplex_search(0, R_end, 1, choose_zero, n);
+        initialization(R_end, choose_u);
+        if(R_end) kplex_search(0, R_end, 1, choose_u, n);
         if(best_solution_size > kplex.size()) {
             kplex.clear();
             for(ui i = 0; i < best_solution_size; i++) kplex.push_back(best_solution[i]);
@@ -364,13 +364,18 @@ public:
 
 private:
     // Initialize degree_in_S, SR, SR_rid, R_end, level_id
-    void initialization(ui &R_end) {
+    void initialization(ui &R_end, int choose_u) {
         memset(degree_in_S, 0, sizeof(ui)*n);
         R_end = 0;
         for(ui i = 0; i < n; i++) SR_rid[i] = n;
         for(ui i = 0; i < n; i++) if(degree[i] + K > best_solution_size){
             SR[R_end] = i; SR_rid[i] = R_end;
             R_end++;
+        }
+
+        if(choose_u != -1 && SR_rid[choose_u] == n) {
+            R_end = 0;
+            return;
         }
 
         for(ui i = 0; i < n; i++) level_id[i] = n;
@@ -398,7 +403,7 @@ private:
 #endif
     }
 
-    void kplex_search(ui S_end, ui R_end, ui level, bool choose_zero, ui last_choice) {
+    void kplex_search(ui S_end, ui R_end, ui level, int choose_u, ui last_choice) {
         if(S_end > best_solution_size) { // find a larger solution
             best_solution_size = S_end;
             for(ui i = 0; i < best_solution_size; i++) best_solution[i] = SR[i];
@@ -410,10 +415,10 @@ private:
         // choose branching vertex
         bool must_include = false;
         ui u = n; // u is the branching vertex
-        if(choose_zero) {
+        if(choose_u != -1) {
         	assert(S_end == 0);
-        	if(SR_rid[0] >= R_end) return;
-        	u = 0;
+        	if(SR_rid[choose_u] >= R_end) return;
+        	u = choose_u;
         	must_include = true;
         }
         else {
@@ -436,7 +441,7 @@ private:
         swap_pos(S_end, SR_rid[u]);
         S_end++;
         pruned = move_u_to_S(S_end, R_end, level);
-        if(!pruned) kplex_search(S_end, R_end, level+1, false, u);
+        if(!pruned) kplex_search(S_end, R_end, level+1, -1, u);
         restore_SR(S_end, R_end, old_R_end, level, old_removed_edges_n);
 #ifdef  _SECOND_ORDER_PRUNING_
         assert(removed_edges_n == old_removed_edges_n);
@@ -456,7 +461,7 @@ private:
         if(!pruned && best_solution_size > pre_best_solution_size) pruned = collect_removable_vertices(S_end, R_end, level);
         if(!pruned) {
             if(!remove_vertices_from_R(S_end, R_end, level)) {
-            	kplex_search(S_end, R_end, level+1, false, last_choice);
+            	kplex_search(S_end, R_end, level+1, -1, last_choice);
             }
         }
         restore_SR(S_end, R_end, old_R_end, level, old_removed_edges_n);
@@ -974,36 +979,36 @@ private:
     }
 
     bool upper_bound_based_partition(ui S_end, ui R_end) {
-        ui ub = 0, pi0 = R_end - S_end;
-        ui *label = neighbors;
-        ui *missing_edges = nonneighbors;
-        memset(label, 0, sizeof(ui)*n);
+        // ui ub = 0, pi0 = R_end - S_end;
+        // ui *label = neighbors;
+        // ui *missing_edges = nonneighbors;
+        // memset(label, 0, sizeof(ui)*n);
 
-        //calculate missing_edges
-        for(ui i = 0; i < S_end; i++) {
-            missing_edges[i] = S_end - degree_in_S[SR[i]] - 1;
-        }
+        // //calculate missing_edges
+        // for(ui i = 0; i < S_end; i++) {
+        //     missing_edges[i] = S_end - degree_in_S[SR[i]] - 1;
+        // }
 
-        for(ui i = 0; i < S_end; i++) {
-            ui u = SR[i];
-            ui cn = 0;
-            int *t_matrix = matrix + u*n;
-            for(ui j = S_end; j < R_end; j++) if(!label[SR[j]] && !t_matrix[SR[j]]) {
-                label[SR[j]] = 1;
-                cn++;
-                pi0--;
-            }
-            ub = ub + min(K - 1 - missing_edges[i], cn);
-        }
+        // for(ui i = 0; i < S_end; i++) {
+        //     ui u = SR[i];
+        //     ui cn = 0;
+        //     int *t_matrix = matrix + u*n;
+        //     for(ui j = S_end; j < R_end; j++) if(!label[SR[j]] && !t_matrix[SR[j]]) {
+        //         label[SR[j]] = 1;
+        //         cn++;
+        //         pi0--;
+        //     }
+        //     ub = ub + min(K - 1 - missing_edges[i], cn);
+        // }
 
-        ub = S_end + pi0 + ub;
+        // ub = S_end + pi0 + ub;
 
-        // printf("%d %d\n", ub, best_solution_size);
+        // // printf("%d %d\n", ub, best_solution_size);
 
-        if(ub <= best_solution_size) {
-            // printf("!\n");
-            return false;
-        }
+        // if(ub <= best_solution_size) {
+        //     // printf("!\n");
+        //     return false;
+        // }
         return true;
     }
 };

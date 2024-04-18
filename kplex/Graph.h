@@ -41,15 +41,12 @@ public:
 	~Graph();
 
     void load_graph(string input_graph);
-    void swap_pos(ui i, ui j);
-    void subgraph_init();
     void find_signed_kplex();
 
 private:
     void get_degree();
     void get_tricnt();
-    void get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn);
-    void rebuild_graph(bool *v_del);
+    ui get_g(ui u, vector<pair<int,int> > &vp, vector<int> &sgn);
     void rebuild_graph(bool *v_del, bool *e_del);
     void CTCP(int del_v, int tv, int te);
     void heu_signed_kplex(int rounds, int k);
