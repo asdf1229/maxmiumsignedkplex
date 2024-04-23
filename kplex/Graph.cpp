@@ -474,7 +474,7 @@ void Graph::CTCP(int del_v, int tv, int te)
 	for(ui u = 0; u < n; u++) {
 		assert(degree[u] >= tv);
 		for(ept i = pstart[u]; i < pend[u]; i++) {
-			// assert(tri_cnt[i] >= te);
+			assert(tri_cnt[i] >= te);
 		}
 	}
 #endif
